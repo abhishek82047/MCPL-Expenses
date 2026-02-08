@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>MCPL Expense App</title>
     
+    <link rel="icon" type="image/png" href="https://images.ctfassets.net/v2a2klvd105s/1CzSk95n0Gd09lpCCbnw3A/0dfd3956dd543f247a657b0a5002bf82/1.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { darkMode: 'class', theme: { extend: {} } }
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { primary: '#2563EB', darkbg: '#111827', darkcard: '#1F2937' } } } }
     </script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -18,31 +20,17 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <style>
-        /* App Native Feel */
         body { background-color: #F9FAFB; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100vh; overflow: hidden; user-select: none; -webkit-tap-highlight-color: transparent; }
-        
-        /* Inputs */
-        .ios-input { background: white; border: 1px solid #E5E7EB; border-radius: 14px; padding: 16px; width: 100%; outline: none; font-size: 16px; transition: 0.2s; }
+        .ios-input { background: white; border: 1px solid #E5E7EB; border-radius: 14px; padding: 16px; width: 100%; outline: none; font-size: 15px; transition: 0.2s; color: #111; }
         .ios-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-        
-        /* Dark Mode */
         .dark .ios-input { background: #1F2937; border-color: #374151; color: white; }
         .dark body { background-color: #111827; color: white; }
-        
-        /* Screens */
         .screen { display: none; height: 100%; flex-direction: column; width: 100%; }
         .screen.active { display: flex; }
-        
-        /* Scrolling */
         .scroll-content { flex: 1; overflow-y: auto; padding-bottom: 120px; overscroll-behavior-y: contain; }
-        
-        /* Animation */
+        .custom-scrollbar::-webkit-scrollbar { width: 0px; background: transparent; }
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar { width: 0px; background: transparent; }
-        
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
@@ -50,48 +38,58 @@
 
     <div id="authScreen" class="screen active px-8 justify-center bg-white dark:bg-gray-900">
         <div class="text-center mb-8 animate-fade-in">
-            <div class="w-28 h-28 rounded-full mx-auto mb-6 shadow-xl border-4 border-blue-50 dark:border-gray-700 overflow-hidden bg-white">
+            <div class="w-24 h-24 rounded-full mx-auto mb-4 shadow-xl border-4 border-blue-50 dark:border-gray-700 overflow-hidden bg-white">
                 <img src="https://images.ctfassets.net/v2a2klvd105s/1CzSk95n0Gd09lpCCbnw3A/0dfd3956dd543f247a657b0a5002bf82/1.png" class="w-full h-full object-cover">
             </div>
-            <h1 id="authTitle" class="text-3xl font-bold tracking-tight">Welcome</h1>
-            <p class="text-gray-500 mt-2 font-medium">MCPL Expense Portal</p>
+            <h1 class="text-3xl font-bold tracking-tight dark:text-white" data-i18n="welcome">Welcome</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-2 font-medium">MCPL Expense Portal</p>
         </div>
 
         <div id="loginForm" class="space-y-4 w-full max-w-sm mx-auto animate-fade-in">
-            <input type="text" id="loginID" placeholder="Employee ID" class="ios-input bg-gray-50">
-            <input type="password" id="loginPass" placeholder="Password" class="ios-input bg-gray-50">
-            <button onclick="app.login()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 transition active:scale-95 text-lg">Sign In</button>
-            <p onclick="app.toggleAuth()" class="text-center text-blue-600 dark:text-blue-400 text-sm mt-4 cursor-pointer font-medium p-2">Don't have an account? Create one</p>
+            <input type="text" id="loginID" placeholder="Employee ID" class="ios-input" data-i18n="empid">
+            
+            <div class="relative">
+                <input type="password" id="loginPass" placeholder="Password" class="ios-input pr-12" data-i18n="pass">
+                <i id="eyeLogin" onclick="app.togglePassword('loginPass', 'eyeLogin')" class="fas fa-eye absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer p-2"></i>
+            </div>
+
+            <button onclick="app.login()" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg hover:bg-blue-700 transition active:scale-95" data-i18n="signin">Sign In</button>
+            <p onclick="app.toggleAuth()" class="text-center text-blue-600 dark:text-blue-400 text-sm mt-4 cursor-pointer font-medium p-2" data-i18n="noAccount">Create an account</p>
         </div>
 
         <div id="regForm" class="hidden space-y-4 w-full max-w-sm mx-auto animate-fade-in">
-            <input type="text" id="regName" placeholder="Full Name" class="ios-input bg-gray-50">
-            <input type="text" id="regID" placeholder="Employee ID" class="ios-input bg-gray-50">
-            <input type="password" id="regPass" placeholder="Set Password" class="ios-input bg-gray-50">
-            <button onclick="app.register()" class="w-full bg-black dark:bg-gray-700 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-gray-800 transition active:scale-95 text-lg">Register</button>
-            <p onclick="app.toggleAuth()" class="text-center text-blue-600 dark:text-blue-400 text-sm mt-4 cursor-pointer font-medium p-2">Back to Login</p>
+            <input type="text" id="regName" placeholder="Full Name" class="ios-input" data-i18n="name">
+            <input type="text" id="regID" placeholder="Employee ID" class="ios-input" data-i18n="empid">
+            
+            <div class="relative">
+                <input type="password" id="regPass" placeholder="Set Password" class="ios-input pr-12" data-i18n="pass">
+                <i id="eyeReg" onclick="app.togglePassword('regPass', 'eyeReg')" class="fas fa-eye absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer p-2"></i>
+            </div>
+
+            <button onclick="app.register()" class="w-full bg-black dark:bg-gray-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition active:scale-95" data-i18n="register">Register</button>
+            <p onclick="app.toggleAuth()" class="text-center text-blue-600 dark:text-blue-400 text-sm mt-4 cursor-pointer font-medium p-2" data-i18n="haveAccount">Back to Login</p>
         </div>
     </div>
 
-    <div id="homeScreen" class="screen bg-gray-50 dark:bg-gray-900">
-        <div class="pt-12 px-6 pb-3 bg-white dark:bg-gray-800 sticky top-0 z-20 shadow-sm flex justify-between items-center">
+    <div id="homeScreen" class="screen">
+        <div class="pt-10 px-6 pb-3 bg-white dark:bg-gray-800 sticky top-0 z-20 shadow-sm flex justify-between items-center transition-colors duration-300">
             <div class="flex items-center gap-3">
-                <div id="homeSideProfile" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden flex items-center justify-center border border-gray-200">
+                <div id="homeSideProfile" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden flex items-center justify-center border border-gray-200 dark:border-gray-600">
                     <i class="fas fa-user text-gray-400"></i>
                 </div>
                 <div>
-                    <h2 class="text-lg font-bold leading-tight">Hi, <span id="userNameHome">User</span></h2>
-                    <p class="text-xs text-gray-500 font-mono" id="userIDHome">ID: ---</p>
+                    <h2 class="text-lg font-bold leading-tight dark:text-white"><span data-i18n="welcome">Hi</span>, <span id="userNameHome">User</span></h2>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 font-mono" id="userIDHome">ID: ---</p>
                 </div>
             </div>
-            <div class="w-9 h-9"></div> 
+            <button onclick="app.openLangModal()" class="w-9 h-9 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-sm"><i class="fas fa-globe"></i></button>
         </div>
 
         <div class="scroll-content p-6">
             <div onclick="app.showScreen('addExpenseScreen')" class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-xl shadow-blue-200 dark:shadow-none mb-8 cursor-pointer transform transition active:scale-95 relative overflow-hidden">
                 <div class="relative z-10">
-                    <p class="text-blue-100 text-xs font-bold uppercase mb-1">Create New</p>
-                    <h3 class="text-2xl font-bold">Expense Request</h3>
+                    <p class="text-blue-100 text-xs font-bold uppercase mb-1" data-i18n="createNew">Create New</p>
+                    <h3 class="text-2xl font-bold" data-i18n="addExp">Expense Request</h3>
                 </div>
                 <div class="absolute right-5 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
                     <i class="fas fa-plus text-xl"></i>
@@ -99,91 +97,98 @@
             </div>
 
             <div class="flex justify-between items-end mb-4 px-1">
-                <h3 class="font-bold text-lg">Pending Requests</h3>
-                <span id="pendingAmount" class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-lg text-xs font-bold">₹0</span>
+                <h3 class="font-bold text-lg dark:text-white" data-i18n="pending">Pending Requests</h3>
+                <span id="pendingAmount" class="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-1 rounded-lg text-xs font-bold">₹0</span>
             </div>
             
             <div id="homeList" class="space-y-3 pb-32"></div>
         </div>
     </div>
 
-    <div id="addExpenseScreen" class="screen bg-white dark:bg-gray-900">
-        <div class="pt-12 px-6 pb-3 border-b dark:border-gray-700 flex items-center sticky top-0 bg-white dark:bg-gray-800 z-20">
+    <div id="addExpenseScreen" class="screen">
+        <div class="pt-10 px-6 pb-3 border-b dark:border-gray-700 flex items-center sticky top-0 bg-white dark:bg-gray-800 z-20">
             <button onclick="app.showScreen('homeScreen')" class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mr-4 active:bg-gray-200"><i class="fas fa-arrow-left text-gray-600 dark:text-white"></i></button>
-            <h2 class="text-xl font-bold">New Request</h2>
+            <h2 class="text-xl font-bold dark:text-white" data-i18n="newReq">New Request</h2>
         </div>
         
         <div class="flex-1 overflow-hidden flex flex-col">
             <div class="flex-1 overflow-y-auto p-6 space-y-5 pb-32 custom-scrollbar">
-                <select id="expType" class="ios-input"><option value="Site Expense">Site Expense</option></select>
-                <select id="expMode" class="ios-input" onchange="app.handleCategoryChange()">
-                    <option value="">Select Category</option>
-                    <option value="Labour">Labour</option>
-                    <option value="Auto/Cab Expenses">Auto/Cab Expenses</option>
-                    <option value="Material Transportation">Material Transportation</option>
-                    <option value="Railway Staff Food/Tea/Snacks">Railway Staff Food/Tea/Snacks</option>
-                    <option value="Material">Material</option>
-                    <option value="Petrol">Petrol</option>
-                    <option value="Other">Other</option>
-                </select>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-400 ml-1 uppercase" data-i18n="type">Type</label>
+                    <select id="expType" class="ios-input"><option value="Site Expense">Site Expense</option></select>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-400 ml-1 uppercase" data-i18n="category">Category</label>
+                    <select id="expMode" class="ios-input" onchange="app.handleCategoryChange()">
+                        <option value="">Select Category</option>
+                        <option value="Labour">Labour</option>
+                        <option value="Auto/Cab Expenses">Auto/Cab Expenses</option>
+                        <option value="Material Transportation">Material Transportation</option>
+                        <option value="Railway Staff Food/Tea/Snacks">Railway Staff Food/Tea/Snacks</option>
+                        <option value="Material">Material</option>
+                        <option value="Petrol">Petrol</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
                 
                 <div id="labourSection" class="hidden grid grid-cols-2 gap-3 bg-blue-50 dark:bg-gray-800 p-4 rounded-2xl">
-                    <input type="number" id="labourCount" placeholder="Count" class="ios-input" oninput="app.calculateTotal()">
-                    <input type="number" id="labourRate" placeholder="Rate" class="ios-input" oninput="app.calculateTotal()">
+                    <input type="number" id="labourCount" placeholder="Count" class="ios-input" oninput="app.calculateTotal()" data-i18n="count">
+                    <input type="number" id="labourRate" placeholder="Rate" class="ios-input" oninput="app.calculateTotal()" data-i18n="rate">
                 </div>
                 
                 <div id="transportSection" class="hidden space-y-3 bg-blue-50 dark:bg-gray-800 p-4 rounded-2xl">
-                    <input type="text" id="fromLoc" placeholder="From Location" class="ios-input">
-                    <input type="text" id="toLoc" placeholder="To Location" class="ios-input">
+                    <input type="text" id="fromLoc" placeholder="From Location" class="ios-input" data-i18n="from">
+                    <input type="text" id="toLoc" placeholder="To Location" class="ios-input" data-i18n="to">
                 </div>
 
-                <input type="text" id="expRemark" placeholder="Remarks / Description" class="ios-input">
+                <input type="text" id="expRemark" placeholder="Remarks / Description" class="ios-input" data-i18n="remark">
 
                 <div class="flex gap-3">
                     <div class="w-1/2">
-                        <label class="text-xs font-bold text-gray-400 ml-1 uppercase">Amount</label>
-                        <input type="number" id="expAmt" placeholder="₹" class="ios-input text-lg font-bold">
+                        <label class="text-xs font-bold text-gray-400 ml-1 uppercase" data-i18n="amount">Amount</label>
+                        <input type="number" id="expAmt" placeholder="₹" class="ios-input text-lg font-bold text-gray-900 dark:text-white">
                     </div>
                     <div class="w-1/2">
-                        <label class="text-xs font-bold text-gray-400 ml-1 uppercase">Date</label>
+                        <label class="text-xs font-bold text-gray-400 ml-1 uppercase" data-i18n="date">Date</label>
                         <input type="date" id="expDate" class="ios-input">
                     </div>
                 </div>
                 
-                <input type="text" id="expLoc" placeholder="Site Location" class="ios-input">
+                <input type="text" id="expLoc" placeholder="Site Location" class="ios-input" data-i18n="loc">
                 
                 <div class="flex gap-3 mt-2">
                     <div onclick="document.getElementById('expFile').click()" class="flex-1 border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 text-center cursor-pointer active:bg-gray-200">
                         <i class="fas fa-folder-open text-gray-400 text-xl mb-1"></i>
-                        <p class="text-[10px] font-bold text-gray-500 uppercase">Gallery</p>
+                        <p class="text-[10px] font-bold text-gray-500 uppercase mt-1" data-i18n="files">Files</p>
                         <input type="file" id="expFile" multiple class="hidden" onchange="app.updateFileLabel()">
                     </div>
                     <div onclick="document.getElementById('cameraInput').click()" class="flex-1 border-2 border-dashed border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-gray-800 rounded-2xl p-4 text-center cursor-pointer active:bg-blue-100">
                         <i class="fas fa-camera text-blue-500 text-xl mb-1"></i>
-                        <p class="text-[10px] font-bold text-blue-500 uppercase">Camera</p>
+                        <p class="text-[10px] font-bold text-blue-500 uppercase mt-1" data-i18n="camera">Camera</p>
                         <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden" onchange="app.updateFileLabel()">
                     </div>
                 </div>
-                <p id="fileStatus" class="text-xs text-center text-gray-400 font-medium">No file chosen</p>
+                <p id="fileStatus" class="text-xs text-center text-gray-400 font-medium" data-i18n="noFile">No file chosen</p>
 
-                <button onclick="app.addToBatch()" class="w-full bg-black dark:bg-gray-700 text-white font-bold py-4 rounded-2xl shadow-xl mt-2 active:scale-95 transition">Add to List</button>
+                <button onclick="app.addToBatch()" class="w-full bg-black dark:bg-gray-700 text-white font-bold py-4 rounded-2xl shadow-xl mt-2 active:scale-95 transition" data-i18n="addList">Add to List</button>
                 
-                <button id="submitBtn" onclick="app.submitAllExpenses()" class="hidden w-full bg-green-600 text-white font-bold py-4 rounded-2xl shadow-xl mt-2 animate-fade-in active:scale-95 transition">Submit All Expenses</button>
+                <button id="btnSubmitAll" onclick="app.submitAllExpenses()" class="hidden w-full bg-green-600 text-white font-bold py-4 rounded-2xl shadow-xl mt-2 animate-fade-in active:scale-95 transition" data-i18n="submitAll">Submit All Expenses</button>
 
                 <div id="batchListContainer" class="mt-6 border-t dark:border-gray-700 pt-4 hidden">
-                    <h4 class="text-xs font-bold text-gray-400 uppercase mb-3">Items Added</h4>
+                    <h4 class="text-xs font-bold text-gray-400 uppercase mb-3" data-i18n="itemsAdded">Items Added</h4>
                     <div id="batchList" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="historyScreen" class="screen bg-gray-50 dark:bg-gray-900">
-        <div class="pt-12 px-6 pb-3 bg-white dark:bg-gray-800 sticky top-0 z-20 shadow-sm">
-            <h2 class="text-xl font-bold mb-3">History</h2>
+    <div id="historyScreen" class="screen">
+        <div class="pt-10 px-6 pb-3 bg-white dark:bg-gray-800 sticky top-0 z-20 shadow-sm">
+            <h2 class="text-xl font-bold mb-3 dark:text-white" data-i18n="history">History</h2>
             <div class="flex gap-2">
                 <select id="historyFilter" onchange="app.handleFilterChange()" class="ios-input py-2 text-sm"><option value="all">All Time</option><option value="month">This Month</option><option value="week">This Week</option><option value="custom">Custom</option></select>
-                <input type="text" id="historySearch" onkeyup="app.loadHistoryList()" placeholder="Search..." class="ios-input py-2 text-sm">
+                <input type="text" id="historySearch" onkeyup="app.loadHistoryList()" placeholder="Search..." class="ios-input py-2 text-sm" data-i18n="search">
             </div>
             <div id="customDateSection" class="hidden flex gap-2 mt-2">
                 <input type="date" id="filterFrom" class="ios-input py-2 text-xs" onchange="app.loadHistoryList()">
@@ -193,12 +198,12 @@
         <div id="historyList" class="scroll-content p-6 space-y-3 pb-32"></div>
     </div>
 
-    <div id="approvalScreen" class="screen bg-gray-50 dark:bg-gray-900">
-        <div class="pt-12 px-6 pb-4 bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-20"><h2 class="text-xl font-bold">Pending Requests</h2></div>
+    <div id="approvalScreen" class="screen">
+        <div class="pt-10 px-6 pb-4 bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-20"><h2 class="text-xl font-bold dark:text-white" data-i18n="requests">Pending Requests</h2></div>
         <div id="approvalList" class="scroll-content p-6 space-y-3 pb-32"></div>
     </div>
 
-    <div id="profileScreen" class="screen bg-gray-50 dark:bg-gray-900">
+    <div id="profileScreen" class="screen">
         <div class="p-6 w-full max-w-md mx-auto h-full flex flex-col justify-center scroll-content">
             <div class="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-sm mb-6 text-center relative animate-fade-in">
                 <div class="relative mx-auto w-28 h-28 mb-4">
@@ -212,23 +217,23 @@
                 <input type="file" id="profileUpload" class="hidden" accept="image/*" onchange="app.handleProfileUpload(event)">
 
                 <div class="flex items-center justify-center gap-2 mb-1">
-                    <h3 id="userNameProfile" class="text-2xl font-bold">User Name</h3>
+                    <h3 id="userNameProfile" class="text-2xl font-bold dark:text-white">User Name</h3>
                     <i onclick="app.editName()" class="fas fa-pen text-gray-400 cursor-pointer text-xs p-2 hover:text-blue-600"></i>
                 </div>
-                <p id="userIDProfile" class="text-sm text-gray-500 font-mono bg-gray-100 dark:bg-gray-700 inline-block px-3 py-1 rounded-full">ID: ---</p>
+                <p id="userIDProfile" class="text-sm text-gray-500 font-mono bg-gray-100 dark:bg-gray-700 dark:text-gray-300 inline-block px-3 py-1 rounded-full">ID: ---</p>
             </div>
 
             <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm overflow-hidden mb-6 animate-fade-in">
                 <button onclick="app.openSettings()" class="w-full text-left p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                    <span class="font-medium"><i class="fas fa-cog mr-3 text-gray-400 w-5"></i> Account Settings</span>
+                    <span class="font-medium dark:text-gray-200" data-i18n="settings"><i class="fas fa-cog mr-3 text-gray-400 w-5"></i> Settings</span>
                     <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
                 </button>
                 <div class="w-full text-left p-5 flex justify-between items-center bg-gray-50 dark:bg-gray-700/50">
-                    <span class="font-medium text-blue-600 dark:text-blue-400 text-sm"><i class="fas fa-code mr-3"></i> Created by Abhishek Rajput</span>
+                    <span class="font-medium text-blue-600 dark:text-blue-400 text-sm" data-i18n="created"><i class="fas fa-code mr-3"></i> Created by Abhishek Rajput</span>
                 </div>
             </div>
 
-            <button onclick="app.logout()" class="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold py-4 rounded-2xl hover:bg-red-100 transition animate-fade-in">Log Out</button>
+            <button onclick="app.logout()" class="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold py-4 rounded-2xl hover:bg-red-100 transition animate-fade-in" data-i18n="logout">Log Out</button>
         </div>
     </div>
 
@@ -237,31 +242,30 @@
         <p class="text-white font-medium">Processing...</p>
     </div>
 
-    <div id="bottomNav" class="fixed bottom-0 w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 h-20 pb-safe hidden justify-around items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
+    <div id="bottomNav" class="fixed bottom-0 w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 h-20 pb-safe hidden justify-around items-center z-40 shadow-lg">
         <div onclick="app.showScreen('homeScreen')" class="flex flex-col items-center w-14 cursor-pointer group">
-            <i id="iconHome" class="fas fa-home text-xl mb-1 nav-icon text-blue-600 transition group-active:scale-90"></i>
-            <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400">Home</span>
+            <i id="iconHome" class="fas fa-home text-xl mb-1 nav-icon text-blue-600 transition"></i>
+            <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400" data-i18n="home">Home</span>
         </div>
         <div id="navApproval" onclick="app.showScreen('approvalScreen')" class="hidden flex flex-col items-center w-14 cursor-pointer relative group">
-            <i id="iconApproval" class="fas fa-file-signature text-xl mb-1 nav-icon text-gray-400 transition group-active:scale-90"></i>
+            <i id="iconApproval" class="fas fa-file-signature text-xl mb-1 nav-icon text-gray-400 transition"></i>
             <div id="mgrBadge" class="hidden absolute top-0 right-3 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-gray-800 animate-pulse"></div>
-            <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400">Requests</span>
+            <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400" data-i18n="requests">Requests</span>
         </div>
         <div onclick="app.showScreen('addExpenseScreen')" class="bg-blue-600 w-14 h-14 rounded-full flex items-center justify-center -mt-8 shadow-lg shadow-blue-300 border-4 border-white dark:border-gray-800 cursor-pointer transform transition active:scale-95">
             <i class="fas fa-plus text-white text-xl"></i>
         </div>
         <div onclick="app.showScreen('historyScreen')" class="flex flex-col items-center w-14 cursor-pointer group">
-            <i id="iconHistory" class="fas fa-history text-xl mb-1 nav-icon text-gray-400 transition group-active:scale-90"></i>
-            <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400">History</span>
+            <i id="iconHistory" class="fas fa-history text-xl mb-1 nav-icon text-gray-400 transition"></i>
+            <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400" data-i18n="history">History</span>
         </div>
         <div onclick="app.showScreen('profileScreen')" class="flex flex-col items-center w-14 cursor-pointer group">
-            <i id="iconProfile" class="fas fa-user text-xl mb-1 nav-icon text-gray-400 transition group-active:scale-90"></i>
-            <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400">Profile</span>
+            <i id="iconProfile" class="fas fa-user text-xl mb-1 nav-icon text-gray-400 transition"></i>
+            <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400" data-i18n="profile">Profile</span>
         </div>
     </div>
 
     <script>
-        // CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyCrASKol2l36yBMUffiV7DOjobE-TRmFxo",
             authDomain: "site-expense.firebaseapp.com",
@@ -276,14 +280,22 @@
         const API_SECRET = "smbZFYmXNbcPej5v7FqHWPq7Lns"; 
         const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
 
-        // INIT
-        firebase.initializeApp(firebaseConfig);
+        try { firebase.initializeApp(firebaseConfig); } catch(e) { console.error("Firebase Init Error", e); }
         const db = firebase.database();
 
-        // APP OBJECT
+        // TRANSLATIONS
+        const translations = {
+            en: { welcome: "Welcome", signin: "Sign In", register: "Create Account", empid: "Employee ID", pass: "Password", name: "Full Name", noAccount: "Don't have an account? Create one", haveAccount: "Already have an account? Login", home: "Home", requests: "Requests", history: "History", profile: "Profile", createNew: "Create New", addExp: "Expense Request", recent: "Recent Activity", pending: "Pending", approved: "Approved", rejected: "Rejected", processing: "Processing", newReq: "New Request", type: "Type", category: "Category", amount: "Amount (₹)", date: "Date", loc: "Site / Location", files: "Files", camera: "Camera", addList: "Add to List", submitAll: "Submit All Expenses", itemsAdded: "Items Added:", selectCat: "Select Category", labour: "Labour", transport: "Auto/Cab Expenses", materialTrans: "Material Transportation", food: "Railway Staff Food/Tea/Snacks", material: "Material", petrol: "Petrol", other: "Other", count: "Count", rate: "Rate", from: "From Location", to: "To Location", remark: "Remarks / Description", fileSel: "Files Selected", noFile: "No file chosen", logout: "Log Out", settings: "Settings", help: "Help & Support", created: "Created by Abhishek Rajput", langSel: "Select Language", allTime: "All Time", thisMonth: "This Month", thisWeek: "This Week", customRange: "Custom Range", search: "Search..." },
+            hi: { welcome: "स्वागत है", signin: "साइन इन", register: "खाता बनाएं", empid: "कर्मचारी आईडी", pass: "पासवर्ड", name: "पूरा नाम", noAccount: "खाता नहीं है? नया बनाएं", haveAccount: "पहले से खाता है? लॉग इन करें", home: "होम", requests: "निवेदन", history: "इतिहास", profile: "प्रोफ़ाइल", createNew: "नया बनाएँ", addExp: "खर्च जोड़ें", recent: "हाल की गतिविधि", pending: "लंबित", approved: "स्वीकृत", rejected: "अस्वीकृत", processing: "प्रक्रिया में", newReq: "नया अनुरोध", type: "प्रकार", category: "श्रेणी", amount: "राशि (₹)", date: "तारीख", loc: "साइट / स्थान", files: "फ़ाइलें", camera: "कैमरा", addList: "लिस्ट में जोड़ें", submitAll: "सभी जमा करें", itemsAdded: "जोड़ी गई वस्तुएं:", selectCat: "श्रेणी चुनें", labour: "लेबर", transport: "ऑटो/कैब खर्च", materialTrans: "सामग्री परिवहन", food: "रेलवे स्टाफ खाना/चाय/नाश्ता", material: "सामग्री", petrol: "पेट्रोल", other: "अन्य", count: "संख्या", rate: "दर", from: "कहाँ से", to: "कहाँ तक", remark: "विवरण / टिप्पणी", fileSel: "फाइल चुनी गई", noFile: "कोई फाइल नहीं", logout: "लॉग आउट", settings: "सेटिंग्स", help: "सहायता", created: "अभिषेक राजपूत द्वारा निर्मित", langSel: "भाषा चुनें", allTime: "सभी समय", thisMonth: "इस महीने", thisWeek: "इस सप्ताह", customRange: "कस्टम तिथि", search: "खोजें..." },
+            te: { welcome: "స్వాగతం", signin: "సైన్ ఇన్", register: "ఖాతాను సృష్టించండి", empid: "ఉద్యోగి ID", pass: "పాస్వర్డ్", name: "పూర్తి పేరు", noAccount: "ఖాతా లేదా? సృష్టించండి", haveAccount: "ఖాతా ఉందా? లాగిన్ అవ్వండి", home: "హోమ్", requests: "అభ్యర్థనలు", history: "చరిత్ర", profile: "ప్రొఫైల్", createNew: "కొత్తది సృష్టించండి", addExp: "ఖర్చును జోడించండి", recent: "ఇటీవలి కార్యాచరణ", pending: "పెండింగ్‌లో ఉంది", approved: "ఆమోదించబడింది", rejected: "తిరస్కరించబడింది", processing: "ప్రాసెసింగ్‌లో ఉంది", newReq: "కొత్త అభ్యర్థన", type: "రకం", category: "వర్గం", amount: "మొత్తం (₹)", date: "తేదీ", loc: "సైట్ / స్థానం", files: "ఫైల్స్", camera: "కెమెరా", addList: "జాబితాకు జోడించు", submitAll: "అన్నీ సమర్పించండి", itemsAdded: "జోడించిన అంశాలు:", selectCat: "వర్గాన్ని ఎంచుకోండి", labour: "లేబర్", transport: "ఆటో/క్యాబ్ ఖర్చులు", materialTrans: "మెటీరియల్ రవాణా", food: "రైల్వే స్టాఫ్ ఫుడ్/టీ/స్నాక్స్", material: "మెటీరియల్", petrol: "పెట్రోల్", other: "ఇతర", count: "సంఖ్య", rate: "రేటు", from: "నుండి", to: "కు", remark: "వ్యాఖ్యలు / వివరణ", fileSel: "ఫైల్ ఎంచుకోబడింది", noFile: "ఫైల్ ఎంచుకోలేదు", logout: "లాగ్ అవుట్", settings: "సెట్టింగులు", help: "సహాయం", created: "అభిషేక్ రాజపుత్ రూపొందించారు", langSel: "భాషను ఎంచుకోండి", allTime: "అన్ని సమయాలలో", thisMonth: "ఈ నెల", thisWeek: "ఈ వారం", customRange: "అనుకూల శ్రేణి", search: "వెతకండి..." },
+            mr: { welcome: "स्वागत आहे", signin: "साइन इन", register: "खाते तयार करा", empid: "कर्मचारी आयडी", pass: "पासवर्ड", name: "पूर्ण नाव", noAccount: "खाते नाही? तयार करा", haveAccount: "खाते आहे? लॉग इन करा", home: "होम", requests: "विनंत्या", history: "इतिहास", profile: "प्रोफाइल", createNew: "नवीन तयार करा", addExp: "खर्च जोडा", recent: "अलीकडील क्रियाकलाप", pending: "प्रलंबित", approved: "मंजूर", rejected: "नाकारले", processing: "प्रक्रियेत", newReq: "नवीन विनंती", type: "प्रकार", category: "श्रेणी", amount: "रक्कम (₹)", date: "तारीख", loc: "साइट / स्थान", files: "फाईल्स", camera: "कॅमेरा", addList: "यादीत जोडा", submitAll: "सर्व सादर करा", itemsAdded: "जोडलेले आयटम:", selectCat: "श्रेणी निवडा", labour: "मजूर", transport: "ऑटो/कॅब खर्च", materialTrans: "साहित्य वाहतूक", food: "रेल्वे कर्मचारी जेवण/चहा/नाश्ता", material: "साहित्य", petrol: "पेट्रोल", other: "इतर", count: "संख्या", rate: "दर", from: "कुठून", to: "कुठपर्यंत", remark: "शेरा / वर्णन", fileSel: "फाईल निवडली", noFile: "फाईल निवडली नाही", logout: "बाहेर पडा", settings: "सेटिंग्ज", help: "मदत", created: "अभिषेक राजपूत यांनी तयार केले", langSel: "भाषा निवडा", allTime: "सर्व वेळ", thisMonth: "या महिन्यात", thisWeek: "या आठवड्यात", customRange: "सानुकूल श्रेणी", search: "शोधा..." },
+            gu: { welcome: "સ્વાગત છે", signin: "સાઇન ઇન", register: "ખાતું બનાવો", empid: "કર્મચારી ID", pass: "પાસવર્ડ", name: "પૂરું નામ", noAccount: "ખાતું નથી? નવું બનાવો", haveAccount: "ખાતું છે? લોગ ઇન કરો", home: "ઘર", requests: "વિનંતીઓ", history: "ઇતિહાસ", profile: "પ્રોફાઇલ", createNew: "નવું બનાવો", addExp: "ખર્ચ ઉમેરો", recent: "તાજેતરની પ્રવૃત્તિ", pending: "બાકી", approved: "મંજૂર", rejected: "નકારી", processing: "પ્રક્રિયામાં", newReq: "નવી વિનંતી", type: "પ્રકાર", category: "શ્રેણી", amount: "રકમ (₹)", date: "તારીખ", loc: "સાઇટ / સ્થાન", files: "ફાઇલો", camera: "કેમેરા", addList: "યાદીમાં ઉમેરો", submitAll: "બધું સબમિટ કરો", itemsAdded: "ઉમેરેલી વસ્તુઓ:", selectCat: "શ્રેણી પસંદ કરો", labour: "મજૂર", transport: "ઓટો/કેબ ખર્ચ", materialTrans: "સામગ્રી પરિવહન", food: "રેલવે સ્ટાફ ફૂડ/ટી/નાસ્તો", material: "સામગ્રી", petrol: "પેટ્રોલ", other: "અન્ય", count: "સંખ્યા", rate: "દર", from: "ક્યાંથી", to: "ક્યાં સુધી", remark: "નોંધ / વર્ણન", fileSel: "ફાઇલ પસંદ કરી", noFile: "કોઈ ફાઇલ નથી", logout: "લોગ આઉટ", settings: "સેટિંગ્સ", help: "મદદ", created: "અભિષેક રાજપૂત દ્વારા નિર્મિત", langSel: "ભાષા પસંદ કરો", allTime: "બધો સમય", thisMonth: "આ મહિને", thisWeek: "આ અઠવાડિયે", customRange: "કસ્ટમ શ્રેણી", search: "શોધો..." }
+        };
+
         const app = {
             currentUser: JSON.parse(localStorage.getItem('user')) || null,
             expenseBatch: [],
+            currentLang: localStorage.getItem('lang') || 'en',
 
             init: function() {
                 if(this.currentUser) {
@@ -300,31 +312,34 @@
                     }
                     this.loadHomeList();
                     this.loadHistoryList();
+                    this.updateUI();
                 }
-                
-                // Set Date
                 document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
-                
-                // Dark Mode
-                if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+                if(localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
             },
 
-            // AUTH
+            // --- PASSWORD TOGGLE ---
+            togglePassword: function(fieldId, iconId) {
+                const f = document.getElementById(fieldId);
+                const i = document.getElementById(iconId);
+                if(f.type === "password") { f.type = "text"; i.classList.replace('fa-eye', 'fa-eye-slash'); }
+                else { f.type = "password"; i.classList.replace('fa-eye-slash', 'fa-eye'); }
+            },
+
             toggleAuth: function() {
                 const l = document.getElementById('loginForm');
                 const r = document.getElementById('regForm');
                 const t = document.getElementById('authTitle');
-                if(l.classList.contains('hidden')) { l.classList.remove('hidden'); r.classList.add('hidden'); t.innerText = "Welcome"; }
-                else { l.classList.add('hidden'); r.classList.remove('hidden'); t.innerText = "Create Account"; }
+                if(l.classList.contains('hidden')) { l.classList.remove('hidden'); r.classList.add('hidden'); t.innerText = translations[this.currentLang].welcome; }
+                else { l.classList.add('hidden'); r.classList.remove('hidden'); t.innerText = translations[this.currentLang].register; }
             },
 
-            login: async function() {
+            login: function() {
                 const id = document.getElementById('loginID').value.trim();
                 const pass = document.getElementById('loginPass').value.trim();
                 if(!id || !pass) return Swal.fire("Error", "Enter Details", "warning");
                 
-                try {
-                    const snap = await db.ref('users').once('value');
+                db.ref('users').once('value').then(snap => {
                     let found = null;
                     snap.forEach(c => { if(c.val().empId === id && c.val().password === pass) found = {key:c.key, ...c.val()}; });
                     
@@ -333,36 +348,31 @@
                         localStorage.setItem('user', JSON.stringify(found));
                         this.init();
                     } else Swal.fire("Error", "Invalid Credentials", "error");
-                } catch(e) { Swal.fire("Network Error", e.message, "error"); }
+                }).catch(e => Swal.fire("Network Error", "Check connection", "error"));
             },
 
-            register: async function() {
+            register: function() {
                 const name = document.getElementById('regName').value.trim();
                 const id = document.getElementById('regID').value.trim();
                 const pass = document.getElementById('regPass').value.trim();
                 if(!name || !id || !pass) return Swal.fire("Error", "Fill all fields", "warning");
 
-                try {
-                    const snap = await db.ref('users').orderByChild('empId').equalTo(id).once('value');
+                db.ref('users').orderByChild('empId').equalTo(id).once('value').then(snap => {
                     if(snap.exists()) return Swal.fire("Error", "ID Exists", "error");
                     
                     const ref = db.ref('users').push();
                     const user = { name, empId:id, password:pass, role:'employee', managerId:'', profileImg:'' };
-                    await ref.set(user);
-                    
-                    user.key = ref.key;
-                    this.currentUser = user;
-                    localStorage.setItem('user', JSON.stringify(user));
-                    this.init();
-                } catch(e) { Swal.fire("Error", e.message, "error"); }
+                    ref.set(user).then(() => {
+                        user.key = ref.key;
+                        this.currentUser = user;
+                        localStorage.setItem('user', JSON.stringify(user));
+                        this.init();
+                    });
+                }).catch(e => Swal.fire("Error", e.message, "error"));
             },
 
-            logout: function() {
-                localStorage.removeItem('user');
-                location.reload();
-            },
+            logout: function() { localStorage.removeItem('user'); location.reload(); },
 
-            // PROFILE
             updateProfileUI: function() {
                 const u = this.currentUser;
                 document.getElementById('userNameHome').innerText = u.name;
@@ -375,41 +385,46 @@
                 document.getElementById('profilePicContainer').innerHTML = u.profileImg ? `<img src="${u.profileImg}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-4xl text-blue-300"></i>';
             },
 
-            editName: async function() {
-                const { value: name } = await Swal.fire({input: 'text', inputValue: this.currentUser.name, title: 'Edit Name'});
-                if(name) {
-                    await db.ref(`users/${this.currentUser.key}`).update({name});
-                    this.currentUser.name = name;
-                    localStorage.setItem('user', JSON.stringify(this.currentUser));
-                    this.updateProfileUI();
-                }
-            },
-
-            handleProfileUpload: async function(e) {
-                const file = e.target.files[0];
-                if(file) {
-                    document.getElementById('loader').classList.remove('hidden');
-                    const urls = await this.uploadFiles([file]);
-                    await db.ref(`users/${this.currentUser.key}`).update({profileImg: urls[0]});
-                    this.currentUser.profileImg = urls[0];
-                    localStorage.setItem('user', JSON.stringify(this.currentUser));
-                    this.updateProfileUI();
-                    document.getElementById('loader').classList.add('hidden');
-                }
-            },
-
-            openSettings: function() {
-                const isDark = document.documentElement.classList.contains('dark');
+            openLangModal: function() {
                 Swal.fire({
-                    title: 'Settings',
-                    html: `<div class="flex justify-between items-center p-2"><span class="font-bold">Dark Mode</span><input type="checkbox" id="darkModeToggle" ${isDark ? 'checked' : ''} class="w-6 h-6"></div>`,
-                    didOpen: () => {
-                        document.getElementById('darkModeToggle').addEventListener('change', (e) => {
-                            if(e.target.checked) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); }
-                            else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); }
-                        });
-                    }
+                    title: 'Select Language',
+                    html: `<div class="grid grid-cols-2 gap-2">
+                        <button onclick="app.changeLanguage('en')" class="p-2 bg-blue-50 text-blue-700 rounded font-bold">English</button>
+                        <button onclick="app.changeLanguage('hi')" class="p-2 bg-orange-50 text-orange-700 rounded font-bold">Hindi</button>
+                        <button onclick="app.changeLanguage('mr')" class="p-3 bg-green-50 rounded-xl font-bold text-green-700">मराठी</button>
+                        <button onclick="app.changeLanguage('gu')" class="p-3 bg-yellow-50 rounded-xl font-bold text-yellow-700">ગુજરાતી</button>
+                        <button onclick="app.changeLanguage('te')" class="p-3 bg-purple-50 rounded-xl font-bold text-purple-700">తెలుగు</button>
+                    </div>`,
+                    showConfirmButton: false
                 });
+            },
+
+            changeLanguage: function(l) { this.currentLang = l; localStorage.setItem('lang', l); this.updateUI(); Swal.close(); },
+
+            updateUI: function() {
+                const t = translations[this.currentLang];
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    if(t[key]) { if(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = t[key]; else el.innerText = t[key]; }
+                });
+                const catSelect = document.getElementById('expMode');
+                if(catSelect) {
+                    catSelect.options[0].text = t.selectCat;
+                    catSelect.options[1].text = t.labour;
+                    catSelect.options[2].text = t.transport;
+                    catSelect.options[3].text = t.materialTrans;
+                    catSelect.options[4].text = t.food; 
+                    catSelect.options[5].text = t.material;
+                    catSelect.options[6].text = t.petrol;
+                    catSelect.options[7].text = t.other;
+                }
+                const histFilter = document.getElementById('historyFilter');
+                if(histFilter) {
+                    histFilter.options[0].text = t.allTime;
+                    histFilter.options[1].text = t.thisMonth;
+                    histFilter.options[2].text = t.thisWeek;
+                    histFilter.options[3].text = t.customRange;
+                }
             },
 
             // EXPENSE
@@ -418,7 +433,7 @@
                 const l = document.getElementById('labourSection');
                 const t = document.getElementById('transportSection');
                 const a = document.getElementById('expAmt');
-                l.classList.add('hidden'); t.classList.add('hidden'); a.readOnly = false; a.placeholder = "Amount (₹)";
+                l.classList.add('hidden'); t.classList.add('hidden'); a.readOnly = false; a.placeholder = translations[this.currentLang].amount;
                 if(mode==='Labour') { l.classList.remove('hidden'); a.readOnly = true; a.placeholder="Auto Calc"; }
                 if(mode.includes('Transport') || mode.includes('Auto')) t.classList.remove('hidden');
             },
@@ -431,7 +446,7 @@
 
             updateFileLabel: function() {
                 const t = document.getElementById('expFile').files.length + document.getElementById('cameraInput').files.length;
-                document.getElementById('fileStatus').innerText = t > 0 ? `${t} Files Selected` : "No file chosen";
+                document.getElementById('fileStatus').innerText = t > 0 ? `${t} Files Selected` : translations[this.currentLang].noFile;
             },
 
             addToBatch: async function() {
@@ -451,17 +466,22 @@
                     if(mode==='Labour') details+=` (Count:${document.getElementById('labourCount').value})`;
                     if(mode.includes('Transport')) details+=` (${document.getElementById('fromLoc').value} to ${document.getElementById('toLoc').value})`;
 
+                    // Determine Status
+                    const isManager = this.currentUser.role === 'manager';
+                    const initialStatus = isManager ? 'pending_admin' : 'pending_manager';
+                    const targetMgrId = isManager ? 'admin' : (this.currentUser.managerId || 'admin');
+
                     this.expenseBatch.push({
                         type: 'Site Expense', mode, details, amount: parseFloat(amt), approvedAmount: 0,
                         date, location: document.getElementById('expLoc').value, attachments: urls,
-                        status: 'pending_manager', timestamp: Date.now(),
+                        status: initialStatus, timestamp: Date.now(),
                         userId: this.currentUser.key, empId: this.currentUser.empId, userName: this.currentUser.name,
-                        managerId: this.currentUser.managerId || 'admin'
+                        managerId: targetMgrId
                     });
                     
                     document.getElementById('expAmt').value = '';
                     document.getElementById('expRemark').value = '';
-                    document.getElementById('fileStatus').innerText = "No file chosen";
+                    document.getElementById('fileStatus').innerText = translations[this.currentLang].noFile;
                     this.renderBatchList();
                     Swal.fire({icon: 'success', title: 'Added', timer: 800, showConfirmButton: false});
                 } catch(e) { Swal.fire("Error", e.message, "error"); }
@@ -476,8 +496,8 @@
                 if(this.expenseBatch.length > 0) {
                     cont.classList.remove('hidden'); btn.classList.remove('hidden');
                     list.innerHTML = this.expenseBatch.map((e,i) => `
-                        <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border dark:border-gray-700 animate-slide-up">
-                            <div><span class="block font-bold">₹${e.amount}</span><span class="text-xs opacity-70">${e.mode}</span></div>
+                        <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border dark:border-gray-700 animate-fade-in">
+                            <div><span class="block font-bold dark:text-white">₹${e.amount}</span><span class="text-xs opacity-70 dark:text-gray-400">${e.mode}</span></div>
                             <i onclick="app.removeBatchItem(${i})" class="fas fa-trash text-red-500 cursor-pointer p-2"></i>
                         </div>
                     `).join('');
@@ -494,7 +514,7 @@
                     this.expenseBatch = []; this.renderBatchList(); this.showScreen('homeScreen');
                     Swal.fire("Success", "Submitted", "success");
                 } catch(e) { Swal.fire("Error", "Failed", "error"); }
-                finally { btn.innerText = "Submit All Expenses"; }
+                finally { btn.innerText = translations[this.currentLang].submitAll; }
             },
 
             uploadFiles: async function(files) {
@@ -509,7 +529,6 @@
                 return await Promise.all(pros);
             },
 
-            // LISTS
             loadHomeList: function() {
                 db.ref('expenses').on('value', (snap) => {
                     const list = document.getElementById('homeList'); list.innerHTML = '';
@@ -555,35 +574,17 @@
 
             createCard: function(d) {
                 let clr = d.status === 'approved' ? 'bg-green-100 text-green-700' : (d.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700');
+                const t = translations[this.currentLang];
+                let st = t[d.status === 'pending_manager' ? 'pending' : (d.status === 'pending_admin' ? 'processing' : d.status)] || d.status;
                 const files = d.attachments ? `<div class="mt-2 flex gap-2 overflow-x-auto">${d.attachments.map((u,i)=>`<button onclick="app.viewImage('${u}')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">Bill ${i+1}</button>`).join('')}</div>` : '';
-                return `
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border dark:border-gray-700 mb-3 animate-slide-up">
-                        <div class="flex justify-between"><h4 class="font-bold">${d.mode}</h4><span class="font-bold text-lg">₹${d.approvedAmount || d.amount}</span></div>
-                        <p class="text-xs opacity-60 mt-1">${d.details||''}</p>
-                        ${files}
-                        <div class="mt-2 flex justify-between items-center">
-                            <span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${clr}">${d.status}</span>
-                            <span class="text-xs opacity-50">${d.date}</span>
-                        </div>
-                    </div>`;
+                return `<div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border dark:border-gray-700 mb-3 animate-fade-in"><div class="flex justify-between"><h4 class="font-bold dark:text-white">${d.mode}</h4><span class="font-bold text-lg dark:text-white">₹${d.approvedAmount || d.amount}</span></div><p class="text-xs opacity-60 mt-1 dark:text-gray-400">${d.details||''}</p>${files}<div class="mt-2 flex justify-between items-center"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${clr}">${st}</span><span class="text-xs opacity-50 dark:text-gray-500">${d.date}</span></div></div>`;
             },
 
-            viewImage: function(url) {
-                Swal.fire({ imageUrl: url, imageAlt: 'Receipt', showConfirmButton: false, showCloseButton: true, width: '90%' });
-            },
+            viewImage: function(url) { Swal.fire({ imageUrl: url, showConfirmButton: false, width: '90%' }); },
 
-            handleFilterChange: function() {
-                const f = document.getElementById('historyFilter').value;
-                const c = document.getElementById('customDateSection');
-                if(f === 'custom') c.classList.remove('hidden'); else c.classList.add('hidden');
-                this.loadHistoryList();
-            },
-
-            // MANAGER
             checkManagerNotifications: function() {
                 db.ref('expenses').on('value', (snap) => {
-                    let c = 0; 
-                    if(snap.exists()) snap.forEach(i => { if(i.val().managerId === this.currentUser.key && i.val().status === 'pending_manager') c++; });
+                    let c = 0; if(snap.exists()) snap.forEach(i => { if(i.val().managerId === this.currentUser.key && i.val().status === 'pending_manager') c++; });
                     const b = document.getElementById('mgrBadge');
                     if(c > 0) { b.classList.remove('hidden'); b.innerText = c; } else b.classList.add('hidden');
                 });
@@ -593,19 +594,10 @@
                 db.ref('expenses').on('value', (snap) => {
                    const list = document.getElementById('approvalList'); list.innerHTML = '';
                    if(snap.exists()) {
-                       snap.forEach(c => {
-                           const d = {key:c.key, ...c.val()};
+                       snap.forEach(child => {
+                           const d = {key:child.key, ...child.val()};
                            if(d.managerId === this.currentUser.key && d.status === 'pending_manager') {
-                               list.innerHTML += `
-                                   <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md border-l-4 border-blue-600 mb-3 animate-slide-up">
-                                       <div class="flex justify-between"><h4 class="font-bold">${d.userName}</h4><span class="font-bold">₹${d.amount}</span></div>
-                                       <p class="text-xs opacity-70 mb-2">${d.mode}</p>
-                                       ${d.attachments ? `<div class="flex gap-2 mb-2 overflow-x-auto">${d.attachments.map((u,i)=>`<button onclick="app.viewImage('${u}')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">View</button>`).join('')}</div>` : ''}
-                                       <div class="flex gap-2 mt-2">
-                                           <button onclick="app.mgrAction('${d.key}','approve')" class="flex-1 bg-green-600 text-white text-xs py-2 rounded-xl font-bold">Approve</button>
-                                           <button onclick="app.mgrAction('${d.key}','reject')" class="flex-1 bg-red-500 text-white text-xs py-2 rounded-xl font-bold">Reject</button>
-                                       </div>
-                                   </div>`;
+                               list.innerHTML += `<div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md border-l-4 border-blue-600 mb-3 animate-fade-in"><div class="flex justify-between"><h4 class="font-bold dark:text-white">${d.userName}</h4><span class="font-bold dark:text-white">₹${d.amount}</span></div><p class="text-xs opacity-70 mb-2 dark:text-gray-400">${d.mode}</p><div class="flex gap-2 mt-2"><button onclick="app.mgrAction('${d.key}','approve')" class="flex-1 bg-green-600 text-white text-xs py-2 rounded-xl font-bold">Approve</button><button onclick="app.mgrAction('${d.key}','reject')" class="flex-1 bg-red-500 text-white text-xs py-2 rounded-xl font-bold">Reject</button></div></div>`;
                            }
                        });
                    }
@@ -619,19 +611,53 @@
                 } else { db.ref(`expenses/${key}`).update({status:'pending_admin', approvedBy:'Manager'}); }
             },
 
+            editName: async function() {
+                const { value: name } = await Swal.fire({input: 'text', inputValue: this.currentUser.name, title: 'Edit Name'});
+                if(name) { await db.ref(`users/${this.currentUser.key}`).update({name}); this.currentUser.name = name; localStorage.setItem('user', JSON.stringify(this.currentUser)); this.updateProfileUI(); }
+            },
+            
+            handleProfileUpload: async function(e) {
+                const file = e.target.files[0];
+                if(file) {
+                    document.getElementById('loader').classList.remove('hidden');
+                    const urls = await this.uploadFiles([file]);
+                    await db.ref(`users/${this.currentUser.key}`).update({profileImg: urls[0]});
+                    this.currentUser.profileImg = urls[0]; localStorage.setItem('user', JSON.stringify(this.currentUser));
+                    this.updateProfileUI(); document.getElementById('loader').classList.add('hidden');
+                }
+            },
+            
+            openSettings: function() {
+                const isDark = document.documentElement.classList.contains('dark');
+                Swal.fire({
+                    title: 'Settings',
+                    html: `<div class="flex justify-between items-center p-2"><span class="font-bold">Dark Mode</span><input type="checkbox" id="darkModeToggle" ${isDark ? 'checked' : ''} class="w-6 h-6"></div>`,
+                    didOpen: () => {
+                        document.getElementById('darkModeToggle').addEventListener('change', (e) => {
+                            if(e.target.checked) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); }
+                            else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); }
+                        });
+                    }
+                });
+            },
+            
+            handleFilterChange: function() {
+                const f = document.getElementById('historyFilter').value;
+                if(f === 'custom') document.getElementById('customDateSection').classList.remove('hidden'); else document.getElementById('customDateSection').classList.add('hidden');
+                this.loadHistoryList();
+            },
+
             showScreen: function(id) {
                 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                 document.getElementById(id).classList.add('active');
                 document.querySelectorAll('.nav-icon').forEach(n => { n.classList.remove('text-blue-600'); n.classList.add('text-gray-400'); });
-                
-                if(id === 'homeScreen') document.querySelector('#navHome i').classList.replace('text-gray-400', 'text-blue-600');
-                if(id === 'approvalScreen') { document.querySelector('#navApproval i').classList.replace('text-gray-400', 'text-blue-600'); this.loadManagerApprovals(); }
-                if(id === 'historyScreen') { document.querySelector('#navHistory i').classList.replace('text-gray-400', 'text-blue-600'); this.loadHistoryList(); }
-                if(id === 'profileScreen') document.querySelector('#navProfile i').classList.replace('text-gray-400', 'text-blue-600');
+                if(id === 'homeScreen') document.querySelector('#iconHome').classList.replace('text-gray-400', 'text-blue-600');
+                if(id === 'approvalScreen') { document.querySelector('#iconApproval').classList.replace('text-gray-400', 'text-blue-600'); this.loadManagerApprovals(); }
+                if(id === 'historyScreen') { document.querySelector('#iconHistory').classList.replace('text-gray-400', 'text-blue-600'); this.loadHistoryList(); }
+                if(id === 'profileScreen') document.querySelector('#iconProfile').classList.replace('text-gray-400', 'text-blue-600');
             }
         };
 
-        // EXPOSE TO GLOBAL
         window.app = app;
         document.addEventListener('DOMContentLoaded', () => app.init());
     </script>
