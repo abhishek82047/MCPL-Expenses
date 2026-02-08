@@ -13,67 +13,70 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <style>
-        body { background-color: #F9FAFB; font-family: -apple-system, sans-serif; height: 100vh; overflow: hidden; user-select: none; }
-        .ios-input { background: white; border: 1px solid #E5E7EB; border-radius: 14px; padding: 16px; width: 100%; outline: none; font-size: 15px; }
+        /* App Native Feel */
+        body { background-color: #F9FAFB; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100vh; overflow: hidden; user-select: none; -webkit-tap-highlight-color: transparent; }
+        
+        /* Inputs */
+        .ios-input { background: white; border: 1px solid #E5E7EB; border-radius: 14px; padding: 16px; width: 100%; outline: none; font-size: 16px; transition: 0.2s; }
         .ios-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
         
+        /* Dark Mode */
         .dark .ios-input { background: #1F2937; border-color: #374151; color: white; }
         .dark body { background-color: #111827; color: white; }
         
-        .screen { display: none; height: 100%; flex-direction: column; }
+        /* Screens */
+        .screen { display: none; height: 100%; flex-direction: column; width: 100%; }
         .screen.active { display: flex; }
         
-        .scroll-content { flex: 1; overflow-y: auto; padding-bottom: 120px; }
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        /* Scrolling */
+        .scroll-content { flex: 1; overflow-y: auto; padding-bottom: 120px; overscroll-behavior-y: contain; }
         
-        /* Loading Spinner */
-        .spinner { border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 4px solid white; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Animation */
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 0px; background: transparent; }
+        
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 transition-colors duration-300">
 
-    <div id="offline-msg" class="hidden fixed top-0 w-full bg-red-600 text-white text-center text-xs py-2 z-50">
-        No Internet Connection
-    </div>
-
     <div id="authScreen" class="screen active px-8 justify-center bg-white dark:bg-gray-900">
-        <div class="text-center mb-8">
-            <div class="w-28 h-28 rounded-full mx-auto mb-6 shadow-xl border-4 border-blue-50 dark:border-gray-700 overflow-hidden">
+        <div class="text-center mb-8 animate-fade-in">
+            <div class="w-28 h-28 rounded-full mx-auto mb-6 shadow-xl border-4 border-blue-50 dark:border-gray-700 overflow-hidden bg-white">
                 <img src="https://images.ctfassets.net/v2a2klvd105s/1CzSk95n0Gd09lpCCbnw3A/0dfd3956dd543f247a657b0a5002bf82/1.png" class="w-full h-full object-cover">
             </div>
             <h1 id="authTitle" class="text-3xl font-bold tracking-tight">Welcome</h1>
             <p class="text-gray-500 mt-2 font-medium">MCPL Expense Portal</p>
         </div>
 
-        <div id="loginForm" class="space-y-4 w-full max-w-sm mx-auto">
-            <input type="text" id="loginID" placeholder="Employee ID" class="ios-input">
-            <input type="password" id="loginPass" placeholder="Password" class="ios-input">
-            <button id="btnLoginAction" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 transition active:scale-95">Sign In</button>
-            
-            <div class="text-center mt-4">
-                <button id="btnGoToReg" class="text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline">Don't have an account? Create one</button>
-            </div>
+        <div id="loginForm" class="space-y-4 w-full max-w-sm mx-auto animate-fade-in">
+            <input type="text" id="loginID" placeholder="Employee ID" class="ios-input bg-gray-50">
+            <input type="password" id="loginPass" placeholder="Password" class="ios-input bg-gray-50">
+            <button onclick="app.login()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 transition active:scale-95 text-lg">Sign In</button>
+            <p onclick="app.toggleAuth()" class="text-center text-blue-600 dark:text-blue-400 text-sm mt-4 cursor-pointer font-medium p-2">Don't have an account? Create one</p>
         </div>
 
-        <div id="regForm" class="hidden space-y-4 w-full max-w-sm mx-auto">
-            <input type="text" id="regName" placeholder="Full Name" class="ios-input">
-            <input type="text" id="regID" placeholder="Employee ID" class="ios-input">
-            <input type="password" id="regPass" placeholder="Set Password" class="ios-input">
-            <button id="btnRegAction" class="w-full bg-black dark:bg-gray-700 text-white font-bold py-4 rounded-2xl shadow-lg transition active:scale-95">Register</button>
-            
-            <div class="text-center mt-4">
-                <button id="btnGoToLogin" class="text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline">Already have an account? Login</button>
-            </div>
+        <div id="regForm" class="hidden space-y-4 w-full max-w-sm mx-auto animate-fade-in">
+            <input type="text" id="regName" placeholder="Full Name" class="ios-input bg-gray-50">
+            <input type="text" id="regID" placeholder="Employee ID" class="ios-input bg-gray-50">
+            <input type="password" id="regPass" placeholder="Set Password" class="ios-input bg-gray-50">
+            <button onclick="app.register()" class="w-full bg-black dark:bg-gray-700 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-gray-800 transition active:scale-95 text-lg">Register</button>
+            <p onclick="app.toggleAuth()" class="text-center text-blue-600 dark:text-blue-400 text-sm mt-4 cursor-pointer font-medium p-2">Back to Login</p>
         </div>
     </div>
 
     <div id="homeScreen" class="screen bg-gray-50 dark:bg-gray-900">
         <div class="pt-12 px-6 pb-3 bg-white dark:bg-gray-800 sticky top-0 z-20 shadow-sm flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div id="homeSideProfile" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden flex items-center justify-center">
+                <div id="homeSideProfile" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden flex items-center justify-center border border-gray-200">
                     <i class="fas fa-user text-gray-400"></i>
                 </div>
                 <div>
@@ -81,36 +84,39 @@
                     <p class="text-xs text-gray-500 font-mono" id="userIDHome">ID: ---</p>
                 </div>
             </div>
-            <button id="langBtn" class="w-9 h-9 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center text-blue-600 shadow-sm"><i class="fas fa-globe"></i></button>
+            <div class="w-9 h-9"></div> 
         </div>
 
         <div class="scroll-content p-6">
-            <div id="btnAddRequest" class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-xl mb-8 cursor-pointer transform transition active:scale-95 relative overflow-hidden">
+            <div onclick="app.showScreen('addExpenseScreen')" class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-xl shadow-blue-200 dark:shadow-none mb-8 cursor-pointer transform transition active:scale-95 relative overflow-hidden">
                 <div class="relative z-10">
                     <p class="text-blue-100 text-xs font-bold uppercase mb-1">Create New</p>
                     <h3 class="text-2xl font-bold">Expense Request</h3>
                 </div>
-                <div class="absolute right-5 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 rounded-full flex items-center justify-center"><i class="fas fa-plus text-xl"></i></div>
+                <div class="absolute right-5 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                    <i class="fas fa-plus text-xl"></i>
+                </div>
             </div>
 
             <div class="flex justify-between items-end mb-4 px-1">
                 <h3 class="font-bold text-lg">Pending Requests</h3>
                 <span id="pendingAmount" class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-lg text-xs font-bold">₹0</span>
             </div>
+            
             <div id="homeList" class="space-y-3 pb-32"></div>
         </div>
     </div>
 
     <div id="addExpenseScreen" class="screen bg-white dark:bg-gray-900">
         <div class="pt-12 px-6 pb-3 border-b dark:border-gray-700 flex items-center sticky top-0 bg-white dark:bg-gray-800 z-20">
-            <button id="backToHome" class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mr-4"><i class="fas fa-arrow-left"></i></button>
+            <button onclick="app.showScreen('homeScreen')" class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mr-4 active:bg-gray-200"><i class="fas fa-arrow-left text-gray-600 dark:text-white"></i></button>
             <h2 class="text-xl font-bold">New Request</h2>
         </div>
         
         <div class="flex-1 overflow-hidden flex flex-col">
             <div class="flex-1 overflow-y-auto p-6 space-y-5 pb-32 custom-scrollbar">
                 <select id="expType" class="ios-input"><option value="Site Expense">Site Expense</option></select>
-                <select id="expMode" class="ios-input">
+                <select id="expMode" class="ios-input" onchange="app.handleCategoryChange()">
                     <option value="">Select Category</option>
                     <option value="Labour">Labour</option>
                     <option value="Auto/Cab Expenses">Auto/Cab Expenses</option>
@@ -122,8 +128,8 @@
                 </select>
                 
                 <div id="labourSection" class="hidden grid grid-cols-2 gap-3 bg-blue-50 dark:bg-gray-800 p-4 rounded-2xl">
-                    <input type="number" id="labourCount" placeholder="Count" class="ios-input">
-                    <input type="number" id="labourRate" placeholder="Rate" class="ios-input">
+                    <input type="number" id="labourCount" placeholder="Count" class="ios-input" oninput="app.calculateTotal()">
+                    <input type="number" id="labourRate" placeholder="Rate" class="ios-input" oninput="app.calculateTotal()">
                 </div>
                 
                 <div id="transportSection" class="hidden space-y-3 bg-blue-50 dark:bg-gray-800 p-4 rounded-2xl">
@@ -134,30 +140,39 @@
                 <input type="text" id="expRemark" placeholder="Remarks / Description" class="ios-input">
 
                 <div class="flex gap-3">
-                    <input type="number" id="expAmt" placeholder="Amount (₹)" class="ios-input w-1/2 font-bold">
-                    <input type="date" id="expDate" class="ios-input w-1/2">
+                    <div class="w-1/2">
+                        <label class="text-xs font-bold text-gray-400 ml-1 uppercase">Amount</label>
+                        <input type="number" id="expAmt" placeholder="₹" class="ios-input text-lg font-bold">
+                    </div>
+                    <div class="w-1/2">
+                        <label class="text-xs font-bold text-gray-400 ml-1 uppercase">Date</label>
+                        <input type="date" id="expDate" class="ios-input">
+                    </div>
                 </div>
+                
                 <input type="text" id="expLoc" placeholder="Site Location" class="ios-input">
                 
                 <div class="flex gap-3 mt-2">
-                    <div id="btnGallery" class="flex-1 border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 text-center cursor-pointer">
-                        <i class="fas fa-folder-open text-gray-400 text-xl"></i><p class="text-[10px] font-bold mt-1">Files</p>
-                        <input type="file" id="expFile" multiple class="hidden">
+                    <div onclick="document.getElementById('expFile').click()" class="flex-1 border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 text-center cursor-pointer active:bg-gray-200">
+                        <i class="fas fa-folder-open text-gray-400 text-xl mb-1"></i>
+                        <p class="text-[10px] font-bold text-gray-500 uppercase">Gallery</p>
+                        <input type="file" id="expFile" multiple class="hidden" onchange="app.updateFileLabel()">
                     </div>
-                    <div id="btnCamera" class="flex-1 border-2 border-dashed border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-gray-800 rounded-2xl p-4 text-center cursor-pointer">
-                        <i class="fas fa-camera text-blue-500 text-xl"></i><p class="text-[10px] font-bold text-blue-500 mt-1">Camera</p>
-                        <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden">
+                    <div onclick="document.getElementById('cameraInput').click()" class="flex-1 border-2 border-dashed border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-gray-800 rounded-2xl p-4 text-center cursor-pointer active:bg-blue-100">
+                        <i class="fas fa-camera text-blue-500 text-xl mb-1"></i>
+                        <p class="text-[10px] font-bold text-blue-500 uppercase">Camera</p>
+                        <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden" onchange="app.updateFileLabel()">
                     </div>
                 </div>
-                <p id="fileStatus" class="text-xs text-center text-gray-400 mt-1">No file chosen</p>
+                <p id="fileStatus" class="text-xs text-center text-gray-400 font-medium">No file chosen</p>
 
-                <button id="btnAddList" class="w-full bg-black dark:bg-gray-700 text-white font-bold py-4 rounded-2xl shadow-xl mt-2">Add to List</button>
+                <button onclick="app.addToBatch()" class="w-full bg-black dark:bg-gray-700 text-white font-bold py-4 rounded-2xl shadow-xl mt-2 active:scale-95 transition">Add to List</button>
                 
-                <button id="btnSubmitAll" class="hidden w-full bg-green-600 text-white font-bold py-4 rounded-2xl shadow-xl mt-2">Submit All Expenses</button>
+                <button id="submitBtn" onclick="app.submitAllExpenses()" class="hidden w-full bg-green-600 text-white font-bold py-4 rounded-2xl shadow-xl mt-2 animate-fade-in active:scale-95 transition">Submit All Expenses</button>
 
                 <div id="batchListContainer" class="mt-6 border-t dark:border-gray-700 pt-4 hidden">
                     <h4 class="text-xs font-bold text-gray-400 uppercase mb-3">Items Added</h4>
-                    <div id="batchList" class="space-y-2"></div>
+                    <div id="batchList" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar"></div>
                 </div>
             </div>
         </div>
@@ -167,12 +182,12 @@
         <div class="pt-12 px-6 pb-3 bg-white dark:bg-gray-800 sticky top-0 z-20 shadow-sm">
             <h2 class="text-xl font-bold mb-3">History</h2>
             <div class="flex gap-2">
-                <select id="historyFilter" class="ios-input py-2 text-sm"><option value="all">All Time</option><option value="month">This Month</option><option value="week">This Week</option><option value="custom">Custom</option></select>
-                <input type="text" id="historySearch" placeholder="Search..." class="ios-input py-2 text-sm">
+                <select id="historyFilter" onchange="app.handleFilterChange()" class="ios-input py-2 text-sm"><option value="all">All Time</option><option value="month">This Month</option><option value="week">This Week</option><option value="custom">Custom</option></select>
+                <input type="text" id="historySearch" onkeyup="app.loadHistoryList()" placeholder="Search..." class="ios-input py-2 text-sm">
             </div>
             <div id="customDateSection" class="hidden flex gap-2 mt-2">
-                <input type="date" id="filterFrom" class="ios-input py-2 text-xs">
-                <input type="date" id="filterTo" class="ios-input py-2 text-xs">
+                <input type="date" id="filterFrom" class="ios-input py-2 text-xs" onchange="app.loadHistoryList()">
+                <input type="date" id="filterTo" class="ios-input py-2 text-xs" onchange="app.loadHistoryList()">
             </div>
         </div>
         <div id="historyList" class="scroll-content p-6 space-y-3 pb-32"></div>
@@ -185,70 +200,68 @@
 
     <div id="profileScreen" class="screen bg-gray-50 dark:bg-gray-900">
         <div class="p-6 w-full max-w-md mx-auto h-full flex flex-col justify-center scroll-content">
-            <div class="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-sm mb-6 text-center relative">
+            <div class="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-sm mb-6 text-center relative animate-fade-in">
                 <div class="relative mx-auto w-28 h-28 mb-4">
-                    <div id="profilePicTrigger" class="w-full h-full rounded-full bg-blue-50 dark:bg-gray-700 overflow-hidden border-4 border-white dark:border-gray-600 shadow-md flex items-center justify-center cursor-pointer">
+                    <div onclick="document.getElementById('profileUpload').click()" id="profilePicContainer" class="w-full h-full rounded-full bg-blue-50 dark:bg-gray-700 overflow-hidden border-4 border-white dark:border-gray-600 shadow-md flex items-center justify-center cursor-pointer">
                         <i class="fas fa-user text-4xl text-blue-300"></i>
                     </div>
-                    <div id="profilePicEditBtn" class="absolute bottom-0 right-0 bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center border-4 border-white dark:border-gray-800 shadow-lg cursor-pointer">
+                    <div onclick="document.getElementById('profileUpload').click()" class="absolute bottom-0 right-0 bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center border-4 border-white dark:border-gray-800 shadow-lg cursor-pointer">
                         <i class="fas fa-pencil-alt text-xs"></i>
                     </div>
                 </div>
-                <input type="file" id="profileUpload" class="hidden" accept="image/*">
+                <input type="file" id="profileUpload" class="hidden" accept="image/*" onchange="app.handleProfileUpload(event)">
 
                 <div class="flex items-center justify-center gap-2 mb-1">
                     <h3 id="userNameProfile" class="text-2xl font-bold">User Name</h3>
-                    <i id="btnEditName" class="fas fa-pen text-gray-400 cursor-pointer text-xs p-2 hover:text-blue-600"></i>
+                    <i onclick="app.editName()" class="fas fa-pen text-gray-400 cursor-pointer text-xs p-2 hover:text-blue-600"></i>
                 </div>
                 <p id="userIDProfile" class="text-sm text-gray-500 font-mono bg-gray-100 dark:bg-gray-700 inline-block px-3 py-1 rounded-full">ID: ---</p>
             </div>
 
-            <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm overflow-hidden mb-6">
-                <button id="btnSettings" class="w-full text-left p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+            <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-sm overflow-hidden mb-6 animate-fade-in">
+                <button onclick="app.openSettings()" class="w-full text-left p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                     <span class="font-medium"><i class="fas fa-cog mr-3 text-gray-400 w-5"></i> Account Settings</span>
                     <i class="fas fa-chevron-right text-gray-300 text-xs"></i>
                 </button>
                 <div class="w-full text-left p-5 flex justify-between items-center bg-gray-50 dark:bg-gray-700/50">
-                    <span class="font-medium text-blue-600 dark:text-blue-400"><i class="fas fa-code mr-3"></i> Created by Abhishek Rajput</span>
+                    <span class="font-medium text-blue-600 dark:text-blue-400 text-sm"><i class="fas fa-code mr-3"></i> Created by Abhishek Rajput</span>
                 </div>
             </div>
 
-            <button id="btnLogout" class="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold py-4 rounded-2xl hover:bg-red-100 transition">Log Out</button>
+            <button onclick="app.logout()" class="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold py-4 rounded-2xl hover:bg-red-100 transition animate-fade-in">Log Out</button>
         </div>
     </div>
 
     <div id="loader" class="fixed inset-0 bg-black/80 hidden z-50 flex flex-col items-center justify-center backdrop-blur-sm">
-        <div class="spinner mb-4"></div>
+        <i class="fas fa-circle-notch fa-spin text-4xl text-white mb-3"></i>
         <p class="text-white font-medium">Processing...</p>
     </div>
 
-    <div id="bottomNav" class="fixed bottom-0 w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 h-20 pb-safe hidden justify-around items-center z-40 shadow-lg">
-        <div id="navHome" class="flex flex-col items-center w-14 cursor-pointer group">
-            <i class="fas fa-home text-xl mb-1 nav-icon text-blue-600"></i>
+    <div id="bottomNav" class="fixed bottom-0 w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 h-20 pb-safe hidden justify-around items-center z-40 shadow-[0_-5px_10px_rgba(0,0,0,0.02)]">
+        <div onclick="app.showScreen('homeScreen')" class="flex flex-col items-center w-14 cursor-pointer group">
+            <i id="iconHome" class="fas fa-home text-xl mb-1 nav-icon text-blue-600 transition group-active:scale-90"></i>
             <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400">Home</span>
         </div>
-        <div id="navApproval" class="hidden flex flex-col items-center w-14 cursor-pointer relative group">
-            <i class="fas fa-file-signature text-xl mb-1 nav-icon text-gray-400"></i>
+        <div id="navApproval" onclick="app.showScreen('approvalScreen')" class="hidden flex flex-col items-center w-14 cursor-pointer relative group">
+            <i id="iconApproval" class="fas fa-file-signature text-xl mb-1 nav-icon text-gray-400 transition group-active:scale-90"></i>
             <div id="mgrBadge" class="hidden absolute top-0 right-3 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-gray-800 animate-pulse"></div>
             <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400">Requests</span>
         </div>
-        <div id="navAdd" class="bg-blue-600 w-14 h-14 rounded-full flex items-center justify-center -mt-8 shadow-lg shadow-blue-300 border-4 border-white dark:border-gray-800 cursor-pointer transform transition active:scale-95">
+        <div onclick="app.showScreen('addExpenseScreen')" class="bg-blue-600 w-14 h-14 rounded-full flex items-center justify-center -mt-8 shadow-lg shadow-blue-300 border-4 border-white dark:border-gray-800 cursor-pointer transform transition active:scale-95">
             <i class="fas fa-plus text-white text-xl"></i>
         </div>
-        <div id="navHistory" class="flex flex-col items-center w-14 cursor-pointer group">
-            <i class="fas fa-history text-xl mb-1 nav-icon text-gray-400"></i>
+        <div onclick="app.showScreen('historyScreen')" class="flex flex-col items-center w-14 cursor-pointer group">
+            <i id="iconHistory" class="fas fa-history text-xl mb-1 nav-icon text-gray-400 transition group-active:scale-90"></i>
             <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400">History</span>
         </div>
-        <div id="navProfile" class="flex flex-col items-center w-14 cursor-pointer group">
-            <i class="fas fa-user text-xl mb-1 nav-icon text-gray-400"></i>
+        <div onclick="app.showScreen('profileScreen')" class="flex flex-col items-center w-14 cursor-pointer group">
+            <i id="iconProfile" class="fas fa-user text-xl mb-1 nav-icon text-gray-400 transition group-active:scale-90"></i>
             <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400">Profile</span>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, get, update, set } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-
+    <script>
+        // CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyCrASKol2l36yBMUffiV7DOjobE-TRmFxo",
             authDomain: "site-expense.firebaseapp.com",
@@ -258,433 +271,369 @@
             messagingSenderId: "61891341484",
             appId: "1:61891341484:web:e6a74b7a85afcfad268309"
         };
-
         const CLOUD_NAME = "drlmksh7f";
         const API_KEY = "239526458521975";
         const API_SECRET = "smbZFYmXNbcPej5v7FqHWPq7Lns"; 
         const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
 
-        let app, db;
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getDatabase(app);
-        } catch (e) { Swal.fire("Fatal Error", "Connection failed. Check Internet.", "error"); }
+        // INIT
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        // --- GLOBAL VARIABLES ---
-        window.currentUser = JSON.parse(localStorage.getItem('user')) || null;
-        window.currentLang = localStorage.getItem('lang') || 'en';
-        window.expenseBatch = [];
+        // APP OBJECT
+        const app = {
+            currentUser: JSON.parse(localStorage.getItem('user')) || null,
+            expenseBatch: [],
 
-        // --- ATTACH EVENT LISTENERS (CRITICAL FOR FIX) ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // Auth
-            document.getElementById('btnLoginAction').addEventListener('click', login);
-            document.getElementById('btnRegAction').addEventListener('click', register);
-            document.getElementById('btnGoToReg').addEventListener('click', toggleAuth);
-            document.getElementById('btnGoToLogin').addEventListener('click', toggleAuth);
-            document.getElementById('btnLogout').addEventListener('click', logout);
-            
-            // Nav
-            document.getElementById('navHome').addEventListener('click', () => showScreen('homeScreen'));
-            document.getElementById('navApproval').addEventListener('click', () => showScreen('approvalScreen'));
-            document.getElementById('navAdd').addEventListener('click', () => showScreen('addExpenseScreen'));
-            document.getElementById('navHistory').addEventListener('click', () => showScreen('historyScreen'));
-            document.getElementById('navProfile').addEventListener('click', () => showScreen('profileScreen'));
-            document.getElementById('backToHome').addEventListener('click', () => showScreen('homeScreen'));
-            
-            // Features
-            document.getElementById('btnSettings').addEventListener('click', openSettings);
-            document.getElementById('btnEditName').addEventListener('click', editName);
-            document.getElementById('profilePicTrigger').addEventListener('click', () => document.getElementById('profileUpload').click());
-            document.getElementById('profilePicEditBtn').addEventListener('click', () => document.getElementById('profileUpload').click());
-            document.getElementById('profileUpload').addEventListener('change', handleProfileUpload);
-            document.getElementById('langBtn').addEventListener('click', openLangModal);
-            
-            // Expense
-            document.getElementById('expMode').addEventListener('change', handleCategoryChange);
-            document.getElementById('labourCount').addEventListener('input', calculateTotal);
-            document.getElementById('labourRate').addEventListener('input', calculateTotal);
-            document.getElementById('btnGallery').addEventListener('click', () => document.getElementById('expFile').click());
-            document.getElementById('btnCamera').addEventListener('click', () => document.getElementById('cameraInput').click());
-            document.getElementById('expFile').addEventListener('change', updateFileLabel);
-            document.getElementById('cameraInput').addEventListener('change', updateFileLabel);
-            document.getElementById('btnAddList').addEventListener('click', addToBatch);
-            document.getElementById('btnSubmitAll').addEventListener('click', submitAllExpenses);
-            
-            // Filter
-            document.getElementById('historyFilter').addEventListener('change', handleFilterChange);
-            document.getElementById('historySearch').addEventListener('keyup', loadHistoryList);
-            document.getElementById('filterFrom').addEventListener('change', loadHistoryList);
-            document.getElementById('filterTo').addEventListener('change', loadHistoryList);
-
-            // Init App Check
-            if (window.currentUser) initApp();
-            document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
-            
-            // Dark Mode Check
-            if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
-        });
-
-        // --- AUTH FUNCTIONS ---
-        function toggleAuth() {
-            const login = document.getElementById('loginForm');
-            const reg = document.getElementById('regForm');
-            const title = document.getElementById('authTitle');
-            
-            if (login.classList.contains('hidden')) {
-                login.classList.remove('hidden'); reg.classList.add('hidden');
-                title.innerText = "Welcome";
-            } else {
-                login.classList.add('hidden'); reg.classList.remove('hidden');
-                title.innerText = "Create Account";
-            }
-        }
-
-        async function login() {
-            const id = document.getElementById('loginID').value.trim();
-            const pass = document.getElementById('loginPass').value.trim();
-            if(!id || !pass) return Swal.fire("Error", "Required fields empty", "warning");
-            
-            try {
-                const snap = await get(ref(db, 'users'));
-                let found = null;
-                if(snap.exists()) snap.forEach(c => { if(c.val().empId === id && c.val().password === pass) found = {key:c.key, ...c.val()}; });
+            init: function() {
+                if(this.currentUser) {
+                    document.getElementById('authScreen').classList.remove('active');
+                    document.getElementById('homeScreen').classList.add('active');
+                    document.getElementById('bottomNav').classList.remove('hidden');
+                    document.getElementById('bottomNav').style.display = 'flex';
+                    this.updateProfileUI();
+                    
+                    if(this.currentUser.role === 'manager') {
+                        document.getElementById('navApproval').classList.remove('hidden');
+                        document.getElementById('navApproval').style.display = 'flex';
+                        this.checkManagerNotifications();
+                    }
+                    this.loadHomeList();
+                    this.loadHistoryList();
+                }
                 
-                if(found) {
-                    localStorage.setItem('user', JSON.stringify(found));
-                    window.currentUser = found;
-                    initApp();
-                } else Swal.fire("Error", "Invalid Credentials", "error");
-            } catch(e) { Swal.fire("Error", "Network Error. Try again.", "error"); }
-        }
+                // Set Date
+                document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+                
+                // Dark Mode
+                if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+            },
 
-        async function register() {
-            const name = document.getElementById('regName').value.trim();
-            const id = document.getElementById('regID').value.trim();
-            const pass = document.getElementById('regPass').value.trim();
-            if(!name || !id || !pass) return Swal.fire("Error", "Fill all fields", "warning");
+            // AUTH
+            toggleAuth: function() {
+                const l = document.getElementById('loginForm');
+                const r = document.getElementById('regForm');
+                const t = document.getElementById('authTitle');
+                if(l.classList.contains('hidden')) { l.classList.remove('hidden'); r.classList.add('hidden'); t.innerText = "Welcome"; }
+                else { l.classList.add('hidden'); r.classList.remove('hidden'); t.innerText = "Create Account"; }
+            },
 
-            try {
-                const snap = await get(ref(db, 'users'));
-                let exists = false;
-                if(snap.exists()) snap.forEach(c => { if(c.val().empId === id) exists = true; });
+            login: async function() {
+                const id = document.getElementById('loginID').value.trim();
+                const pass = document.getElementById('loginPass').value.trim();
+                if(!id || !pass) return Swal.fire("Error", "Enter Details", "warning");
+                
+                try {
+                    const snap = await db.ref('users').once('value');
+                    let found = null;
+                    snap.forEach(c => { if(c.val().empId === id && c.val().password === pass) found = {key:c.key, ...c.val()}; });
+                    
+                    if(found) {
+                        this.currentUser = found;
+                        localStorage.setItem('user', JSON.stringify(found));
+                        this.init();
+                    } else Swal.fire("Error", "Invalid Credentials", "error");
+                } catch(e) { Swal.fire("Network Error", e.message, "error"); }
+            },
 
-                if(exists) Swal.fire("Error", "ID already exists", "error");
-                else {
-                    const newRef = push(ref(db, 'users'));
-                    const newUser = {name, empId:id, password:pass, role:'employee', managerId:'', profileImg:''};
-                    await set(newRef, newUser);
-                    newUser.key = newRef.key;
-                    localStorage.setItem('user', JSON.stringify(newUser));
-                    window.currentUser = newUser;
-                    initApp();
+            register: async function() {
+                const name = document.getElementById('regName').value.trim();
+                const id = document.getElementById('regID').value.trim();
+                const pass = document.getElementById('regPass').value.trim();
+                if(!name || !id || !pass) return Swal.fire("Error", "Fill all fields", "warning");
+
+                try {
+                    const snap = await db.ref('users').orderByChild('empId').equalTo(id).once('value');
+                    if(snap.exists()) return Swal.fire("Error", "ID Exists", "error");
+                    
+                    const ref = db.ref('users').push();
+                    const user = { name, empId:id, password:pass, role:'employee', managerId:'', profileImg:'' };
+                    await ref.set(user);
+                    
+                    user.key = ref.key;
+                    this.currentUser = user;
+                    localStorage.setItem('user', JSON.stringify(user));
+                    this.init();
+                } catch(e) { Swal.fire("Error", e.message, "error"); }
+            },
+
+            logout: function() {
+                localStorage.removeItem('user');
+                location.reload();
+            },
+
+            // PROFILE
+            updateProfileUI: function() {
+                const u = this.currentUser;
+                document.getElementById('userNameHome').innerText = u.name;
+                document.getElementById('userIDHome').innerText = u.empId;
+                document.getElementById('userNameProfile').innerText = u.name;
+                document.getElementById('userIDProfile').innerText = u.empId;
+                
+                const img = u.profileImg ? `<img src="${u.profileImg}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-3xl text-gray-400"></i>';
+                document.getElementById('homeSideProfile').innerHTML = img;
+                document.getElementById('profilePicContainer').innerHTML = u.profileImg ? `<img src="${u.profileImg}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-4xl text-blue-300"></i>';
+            },
+
+            editName: async function() {
+                const { value: name } = await Swal.fire({input: 'text', inputValue: this.currentUser.name, title: 'Edit Name'});
+                if(name) {
+                    await db.ref(`users/${this.currentUser.key}`).update({name});
+                    this.currentUser.name = name;
+                    localStorage.setItem('user', JSON.stringify(this.currentUser));
+                    this.updateProfileUI();
                 }
-            } catch(e) { Swal.fire("Error", e.message, "error"); }
-        }
+            },
 
-        function logout() {
-            localStorage.removeItem('user');
-            location.reload();
-        }
-
-        function initApp() {
-            document.getElementById('authScreen').classList.remove('active');
-            document.getElementById('homeScreen').classList.add('active');
-            document.getElementById('bottomNav').style.display = 'flex';
-            document.getElementById('bottomNav').classList.remove('hidden');
-
-            updateProfileUI();
-            if(window.currentUser.role === 'manager') {
-                document.getElementById('navApproval').classList.remove('hidden');
-                document.getElementById('navApproval').style.display = 'flex';
-                checkManagerNotifications();
-            }
-            loadHomeList();
-            loadHistoryList();
-        }
-
-        // --- PROFILE ---
-        function updateProfileUI() {
-            const u = window.currentUser;
-            ['userNameHome', 'userNameProfile'].forEach(id => document.getElementById(id).innerText = u.name);
-            ['userIDHome', 'userIDProfile'].forEach(id => document.getElementById(id).innerText = u.empId);
-            
-            const imgHtml = u.profileImg ? `<img src="${u.profileImg}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-3xl text-gray-400"></i>';
-            document.getElementById('homeSideProfile').innerHTML = imgHtml;
-            const profilePicContainer = document.getElementById('profilePicContainer');
-            if(profilePicContainer) profilePicContainer.innerHTML = u.profileImg ? `<img src="${u.profileImg}" class="w-full h-full object-cover">` : '<i class="fas fa-user text-4xl text-blue-300"></i>';
-        }
-
-        async function editName() {
-            const { value: name } = await Swal.fire({input: 'text', inputValue: window.currentUser.name, title: 'Edit Name'});
-            if(name) {
-                await update(ref(db, `users/${window.currentUser.key}`), {name});
-                window.currentUser.name = name;
-                localStorage.setItem('user', JSON.stringify(window.currentUser));
-                updateProfileUI();
-            }
-        }
-
-        async function handleProfileUpload(e) {
-            const file = e.target.files[0];
-            if(file) {
-                document.getElementById('loader').classList.remove('hidden');
-                const urls = await uploadFiles([file]);
-                await update(ref(db, `users/${window.currentUser.key}`), {profileImg: urls[0]});
-                window.currentUser.profileImg = urls[0];
-                localStorage.setItem('user', JSON.stringify(window.currentUser));
-                updateProfileUI();
-                document.getElementById('loader').classList.add('hidden');
-            }
-        }
-
-        function openSettings() {
-            const isDark = document.documentElement.classList.contains('dark');
-            Swal.fire({
-                title: 'Settings',
-                html: `<div class="flex justify-between items-center p-2"><span class="font-bold">Dark Mode</span><input type="checkbox" id="darkModeToggle" ${isDark ? 'checked' : ''} class="w-6 h-6"></div>`,
-                didOpen: () => {
-                    document.getElementById('darkModeToggle').addEventListener('change', (e) => {
-                        if(e.target.checked) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); }
-                        else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); }
-                    });
+            handleProfileUpload: async function(e) {
+                const file = e.target.files[0];
+                if(file) {
+                    document.getElementById('loader').classList.remove('hidden');
+                    const urls = await this.uploadFiles([file]);
+                    await db.ref(`users/${this.currentUser.key}`).update({profileImg: urls[0]});
+                    this.currentUser.profileImg = urls[0];
+                    localStorage.setItem('user', JSON.stringify(this.currentUser));
+                    this.updateProfileUI();
+                    document.getElementById('loader').classList.add('hidden');
                 }
-            });
-        }
+            },
 
-        // --- EXPENSE ---
-        function handleCategoryChange() {
-            const mode = document.getElementById('expMode').value;
-            const l = document.getElementById('labourSection');
-            const t = document.getElementById('transportSection');
-            const a = document.getElementById('expAmt');
-            l.classList.add('hidden'); t.classList.add('hidden'); a.readOnly = false;
-            
-            if(mode === 'Labour') { l.classList.remove('hidden'); a.readOnly = true; }
-            if(mode.includes('Transport') || mode.includes('Auto')) t.classList.remove('hidden');
-        }
-
-        function calculateTotal() {
-            document.getElementById('expAmt').value = (parseFloat(document.getElementById('labourCount').value)||0) * (parseFloat(document.getElementById('labourRate').value)||0);
-        }
-
-        function updateFileLabel() {
-            const t = document.getElementById('expFile').files.length + document.getElementById('cameraInput').files.length;
-            document.getElementById('fileStatus').innerText = t > 0 ? `${t} Files` : "No file chosen";
-        }
-
-        async function addToBatch() {
-            const amt = document.getElementById('expAmt').value;
-            const date = document.getElementById('expDate').value;
-            const mode = document.getElementById('expMode').value;
-            const remark = document.getElementById('expRemark').value;
-            
-            if(!amt || !date) return Swal.fire("Required", "Amount & Date Required", "warning");
-
-            document.getElementById('loader').classList.remove('hidden');
-            try {
-                const files = [...document.getElementById('expFile').files, ...document.getElementById('cameraInput').files];
-                let urls = [];
-                if(files.length > 0) urls = await uploadFiles(files);
-
-                let details = remark;
-                if(mode==='Labour') details+=` (Count: ${document.getElementById('labourCount').value})`;
-                if(mode.includes('Transport')) details+=` (${document.getElementById('fromLoc').value} to ${document.getElementById('toLoc').value})`;
-
-                window.expenseBatch.push({
-                    type: 'Site Expense', mode, details, amount: parseFloat(amt), approvedAmount: 0,
-                    date, location: document.getElementById('expLoc').value, attachments: urls,
-                    status: 'pending_manager', timestamp: Date.now(),
-                    userId: window.currentUser.key, empId: window.currentUser.empId, userName: window.currentUser.name,
-                    managerId: window.currentUser.managerId || 'admin'
+            openSettings: function() {
+                const isDark = document.documentElement.classList.contains('dark');
+                Swal.fire({
+                    title: 'Settings',
+                    html: `<div class="flex justify-between items-center p-2"><span class="font-bold">Dark Mode</span><input type="checkbox" id="darkModeToggle" ${isDark ? 'checked' : ''} class="w-6 h-6"></div>`,
+                    didOpen: () => {
+                        document.getElementById('darkModeToggle').addEventListener('change', (e) => {
+                            if(e.target.checked) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); }
+                            else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); }
+                        });
+                    }
                 });
+            },
+
+            // EXPENSE
+            handleCategoryChange: function() {
+                const mode = document.getElementById('expMode').value;
+                const l = document.getElementById('labourSection');
+                const t = document.getElementById('transportSection');
+                const a = document.getElementById('expAmt');
+                l.classList.add('hidden'); t.classList.add('hidden'); a.readOnly = false; a.placeholder = "Amount (₹)";
+                if(mode==='Labour') { l.classList.remove('hidden'); a.readOnly = true; a.placeholder="Auto Calc"; }
+                if(mode.includes('Transport') || mode.includes('Auto')) t.classList.remove('hidden');
+            },
+
+            calculateTotal: function() {
+                const c = parseFloat(document.getElementById('labourCount').value)||0;
+                const r = parseFloat(document.getElementById('labourRate').value)||0;
+                document.getElementById('expAmt').value = c * r;
+            },
+
+            updateFileLabel: function() {
+                const t = document.getElementById('expFile').files.length + document.getElementById('cameraInput').files.length;
+                document.getElementById('fileStatus').innerText = t > 0 ? `${t} Files Selected` : "No file chosen";
+            },
+
+            addToBatch: async function() {
+                const amt = document.getElementById('expAmt').value;
+                const date = document.getElementById('expDate').value;
+                const mode = document.getElementById('expMode').value;
                 
-                document.getElementById('expAmt').value = '';
-                document.getElementById('expRemark').value = '';
-                renderBatchList();
-                Swal.fire({icon: 'success', title: 'Added', timer: 800, showConfirmButton: false});
-            } catch(e) { Swal.fire("Error", e.message, "error"); } 
-            finally { document.getElementById('loader').classList.add('hidden'); }
-        }
+                if(!amt || !date) return Swal.fire("Required", "Amount & Date are mandatory", "warning");
 
-        function renderBatchList() {
-            const list = document.getElementById('batchList');
-            const cont = document.getElementById('batchListContainer');
-            const btn = document.getElementById('submitBtn');
-            
-            if(window.expenseBatch.length > 0) {
-                cont.classList.remove('hidden'); btn.classList.remove('hidden');
-                list.innerHTML = window.expenseBatch.map((e,i) => `
-                    <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border dark:border-gray-700">
-                        <div><span class="block font-bold">₹${e.amount}</span><span class="text-xs opacity-70">${e.mode}</span></div>
-                        <i onclick="window.removeBatchItem(${i})" class="fas fa-trash text-red-500 cursor-pointer p-2"></i>
-                    </div>
-                `).join('');
-                setTimeout(() => list.scrollTop = list.scrollHeight, 100);
-            } else { cont.classList.add('hidden'); btn.classList.add('hidden'); }
-        }
-        
-        window.removeBatchItem = (i) => { window.expenseBatch.splice(i,1); renderBatchList(); };
+                document.getElementById('loader').classList.remove('hidden');
+                try {
+                    const files = [...document.getElementById('expFile').files, ...document.getElementById('cameraInput').files];
+                    let urls = [];
+                    if(files.length > 0) urls = await this.uploadFiles(files);
 
-        async function submitAllExpenses() {
-            const btn = document.getElementById('submitBtn'); btn.innerText = "Sending...";
-            try {
-                for(let item of window.expenseBatch) await push(ref(db, 'expenses'), item);
-                window.expenseBatch = []; renderBatchList(); showScreen('homeScreen');
-                Swal.fire("Success", "Submitted", "success");
-            } catch(e) { Swal.fire("Error", "Failed", "error"); }
-            finally { btn.innerText = "Submit All Expenses"; }
-        }
+                    let details = document.getElementById('expRemark').value;
+                    if(mode==='Labour') details+=` (Count:${document.getElementById('labourCount').value})`;
+                    if(mode.includes('Transport')) details+=` (${document.getElementById('fromLoc').value} to ${document.getElementById('toLoc').value})`;
 
-        async function uploadFiles(files) {
-            const ts = Math.round(new Date().getTime()/1000);
-            const sig = CryptoJS.SHA1(`timestamp=${ts}${API_SECRET}`).toString();
-            const pros = Array.from(files).map(async f => {
-                const fd = new FormData(); fd.append("file", f); fd.append("api_key", API_KEY);
-                fd.append("timestamp", ts); fd.append("signature", sig);
-                const res = await fetch(UPLOAD_URL, {method:'POST', body:fd});
-                const d = await res.json(); return d.secure_url;
-            });
-            return await Promise.all(pros);
-        }
+                    this.expenseBatch.push({
+                        type: 'Site Expense', mode, details, amount: parseFloat(amt), approvedAmount: 0,
+                        date, location: document.getElementById('expLoc').value, attachments: urls,
+                        status: 'pending_manager', timestamp: Date.now(),
+                        userId: this.currentUser.key, empId: this.currentUser.empId, userName: this.currentUser.name,
+                        managerId: this.currentUser.managerId || 'admin'
+                    });
+                    
+                    document.getElementById('expAmt').value = '';
+                    document.getElementById('expRemark').value = '';
+                    document.getElementById('fileStatus').innerText = "No file chosen";
+                    this.renderBatchList();
+                    Swal.fire({icon: 'success', title: 'Added', timer: 800, showConfirmButton: false});
+                } catch(e) { Swal.fire("Error", e.message, "error"); }
+                finally { document.getElementById('loader').classList.add('hidden'); }
+            },
 
-        // --- LISTS & UI ---
-        function loadHomeList() {
-            onValue(ref(db, 'expenses'), (snap) => {
-                const list = document.getElementById('homeList'); list.innerHTML = '';
-                let total = 0;
-                if(snap.exists()) {
-                    const arr = [];
-                    snap.forEach(c => { if(c.val().userId === window.currentUser.key && c.val().status !== 'approved' && c.val().status !== 'rejected') arr.push(c.val()); });
-                    arr.sort((a,b) => b.timestamp - a.timestamp);
-                    arr.forEach(d => { total += d.amount; list.innerHTML += createCard(d); });
-                }
-                document.getElementById('pendingAmount').innerText = `₹${total}`;
-            });
-        }
-
-        function createCard(d) {
-            let clr = d.status === 'pending_manager' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700';
-            const files = d.attachments ? `<div class="mt-2 flex gap-2 overflow-x-auto">${d.attachments.map((u,i)=>`<button onclick="window.viewImage('${u}')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">View Bill ${i+1}</button>`).join('')}</div>` : '';
-            return `
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border dark:border-gray-700 mb-3 animate-slide-up">
-                    <div class="flex justify-between"><h4 class="font-bold">${d.mode}</h4><span class="font-bold text-lg">₹${d.amount}</span></div>
-                    <p class="text-xs opacity-60 mt-1">${d.details||''}</p>
-                    ${files}
-                    <div class="mt-2 flex justify-between items-center">
-                        <span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${clr}">${d.status}</span>
-                        <span class="text-xs opacity-50">${d.date}</span>
-                    </div>
-                </div>`;
-        }
-
-        window.viewImage = (url) => {
-            Swal.fire({ imageUrl: url, imageAlt: 'Receipt', showConfirmButton: false, showCloseButton: true, width: '90%' });
-        }
-
-        // --- NAVIGATION & INIT ---
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            
-            // Icons Reset
-            document.querySelectorAll('.nav-icon').forEach(n => { n.classList.remove('text-blue-600'); n.classList.add('text-gray-400'); });
-            
-            // Active Icon
-            if(id === 'homeScreen') document.querySelector('#navHome i').classList.replace('text-gray-400', 'text-blue-600');
-            else if(id === 'approvalScreen') document.querySelector('#navApproval i').classList.replace('text-gray-400', 'text-blue-600');
-            else if(id === 'historyScreen') document.querySelector('#navHistory i').classList.replace('text-gray-400', 'text-blue-600');
-            else if(id === 'profileScreen') document.querySelector('#navProfile i').classList.replace('text-gray-400', 'text-blue-600');
-
-            if(id === 'historyScreen') loadHistoryList();
-        }
-
-        // Global exposing for onclick
-        window.login = login;
-        window.register = register;
-        window.logout = logout;
-        window.toggleAuth = toggleAuth;
-        window.showScreen = showScreen;
-        window.openLangModal = openLangModal;
-        window.changeLanguage = changeLanguage;
-        window.handleCategoryChange = handleCategoryChange;
-        window.calculateTotal = calculateTotal;
-        window.addToBatch = addToBatch;
-        window.submitAllExpenses = submitAllExpenses;
-        window.triggerProfileUpload = triggerProfileUpload;
-        window.handleProfileUpload = handleProfileUpload;
-        window.editName = editName;
-        window.openSettings = openSettings;
-        window.viewImage = viewImage;
-        window.removeBatchItem = removeBatchItem;
-        
-        // Re-added helper for History List
-        window.loadHistoryList = () => {
-             onValue(ref(db, 'expenses'), (snap) => {
-                const list = document.getElementById('historyList'); list.innerHTML = '';
-                if(snap.exists()) {
-                    let arr = [];
-                    snap.forEach(c => { if(c.val().userId === window.currentUser.key && (c.val().status === 'approved' || c.val().status === 'rejected')) arr.push(c.val()); });
-                    arr.sort((a,b) => b.timestamp - a.timestamp);
-                    arr.forEach(d => list.innerHTML += createCard(d));
-                }
-            });
-        };
-        
-        // Language Modal
-        function openLangModal() {
-            Swal.fire({
-                title: 'Select Language',
-                html: `<div class="grid grid-cols-2 gap-2">
-                    <button onclick="window.changeLanguage('en')" class="p-2 bg-blue-50 text-blue-700 rounded font-bold">English</button>
-                    <button onclick="window.changeLanguage('hi')" class="p-2 bg-orange-50 text-orange-700 rounded font-bold">Hindi</button>
-                </div>`,
-                showConfirmButton: false
-            });
-        }
-        function changeLanguage(l) { window.currentLang = l; localStorage.setItem('lang', l); Swal.close(); location.reload(); }
-
-        // --- MANAGER ---
-        function checkManagerNotifications() {
-            onValue(ref(db, 'expenses'), (snap) => {
-                let c = 0; 
-                if(snap.exists()) snap.forEach(i => { if(i.val().managerId === window.currentUser.key && i.val().status === 'pending_manager') c++; });
-                const b = document.getElementById('mgrBadge');
-                if(c > 0) { b.classList.remove('hidden'); b.innerText = c; } else b.classList.add('hidden');
+            renderBatchList: function() {
+                const list = document.getElementById('batchList');
+                const cont = document.getElementById('batchListContainer');
+                const btn = document.getElementById('submitBtn');
                 
-                // If approval screen active, reload list
-                if(document.getElementById('approvalScreen').classList.contains('active')) loadManagerApprovals();
-            });
-        }
+                if(this.expenseBatch.length > 0) {
+                    cont.classList.remove('hidden'); btn.classList.remove('hidden');
+                    list.innerHTML = this.expenseBatch.map((e,i) => `
+                        <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border dark:border-gray-700 animate-slide-up">
+                            <div><span class="block font-bold">₹${e.amount}</span><span class="text-xs opacity-70">${e.mode}</span></div>
+                            <i onclick="app.removeBatchItem(${i})" class="fas fa-trash text-red-500 cursor-pointer p-2"></i>
+                        </div>
+                    `).join('');
+                    setTimeout(() => list.scrollTop = list.scrollHeight, 100);
+                } else { cont.classList.add('hidden'); btn.classList.add('hidden'); }
+            },
 
-        function loadManagerApprovals() {
-            onValue(ref(db, 'expenses'), (snap) => {
-               const list = document.getElementById('approvalList'); list.innerHTML = '';
-               if(snap.exists()) {
-                   snap.forEach(child => {
-                       const d = {key:child.key, ...child.val()};
-                       if(d.managerId === window.currentUser.key && d.status === 'pending_manager') {
-                           list.innerHTML += `
-                               <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md border-l-4 border-blue-600 mb-3 animate-slide-up">
-                                   <div class="flex justify-between"><h4 class="font-bold">${d.userName}</h4><span class="font-bold">₹${d.amount}</span></div>
-                                   <p class="text-xs opacity-70 mb-2">${d.mode}</p>
-                                   <div class="flex gap-2 mt-2">
-                                       <button onclick="window.mgrAction('${d.key}','approve')" class="flex-1 bg-green-600 text-white text-xs py-2 rounded-xl font-bold">Approve</button>
-                                       <button onclick="window.mgrAction('${d.key}','reject')" class="flex-1 bg-red-500 text-white text-xs py-2 rounded-xl font-bold">Reject</button>
-                                   </div>
-                               </div>`;
-                       }
-                   });
-               }
-            });
-        }
-        window.mgrAction = async (key, action) => {
-            if(action === 'reject') {
-                const {value: r} = await Swal.fire({input:'text', title:'Rejection Reason'});
-                if(r) update(ref(db, `expenses/${key}`), {status:'rejected', rejectReason: r});
-            } else { update(ref(db, `expenses/${key}`), {status:'pending_admin', approvedBy:'Manager'}); }
+            removeBatchItem: function(i) { this.expenseBatch.splice(i,1); this.renderBatchList(); },
+
+            submitAllExpenses: async function() {
+                const btn = document.getElementById('submitBtn'); btn.innerText = "Sending...";
+                try {
+                    for(let item of this.expenseBatch) await db.ref('expenses').push(item);
+                    this.expenseBatch = []; this.renderBatchList(); this.showScreen('homeScreen');
+                    Swal.fire("Success", "Submitted", "success");
+                } catch(e) { Swal.fire("Error", "Failed", "error"); }
+                finally { btn.innerText = "Submit All Expenses"; }
+            },
+
+            uploadFiles: async function(files) {
+                const ts = Math.round(new Date().getTime()/1000);
+                const sig = CryptoJS.SHA1(`timestamp=${ts}${API_SECRET}`).toString();
+                const pros = Array.from(files).map(async f => {
+                    const fd = new FormData(); fd.append("file", f); fd.append("api_key", API_KEY);
+                    fd.append("timestamp", ts); fd.append("signature", sig);
+                    const res = await fetch(UPLOAD_URL, {method:'POST', body:fd});
+                    const d = await res.json(); return d.secure_url;
+                });
+                return await Promise.all(pros);
+            },
+
+            // LISTS
+            loadHomeList: function() {
+                db.ref('expenses').on('value', (snap) => {
+                    const list = document.getElementById('homeList'); list.innerHTML = '';
+                    let total = 0;
+                    if(snap.exists()) {
+                        const arr = [];
+                        snap.forEach(c => { if(c.val().userId === this.currentUser.key && c.val().status !== 'approved' && c.val().status !== 'rejected') arr.push(c.val()); });
+                        arr.sort((a,b) => b.timestamp - a.timestamp);
+                        arr.forEach(d => { total += d.amount; list.innerHTML += this.createCard(d); });
+                    }
+                    document.getElementById('pendingAmount').innerText = `₹${total}`;
+                });
+            },
+
+            loadHistoryList: function() {
+                const search = document.getElementById('historySearch').value.toLowerCase();
+                const filter = document.getElementById('historyFilter').value;
+                const from = document.getElementById('filterFrom').value;
+                const to = document.getElementById('filterTo').value;
+
+                db.ref('expenses').on('value', (snap) => {
+                    const list = document.getElementById('historyList'); list.innerHTML = '';
+                    if(snap.exists()) {
+                        let arr = [];
+                        snap.forEach(c => { if(c.val().userId === this.currentUser.key && (c.val().status === 'approved' || c.val().status === 'rejected')) arr.push(c.val()); });
+                        
+                        // Filters
+                        const now = new Date();
+                        arr = arr.filter(d => {
+                            const date = new Date(d.date);
+                            let match = true;
+                            if(filter === 'month') match = date.getMonth() === now.getMonth();
+                            if(filter === 'week') match = date >= new Date(Date.now() - 7*24*60*60*1000);
+                            if(filter === 'custom' && from && to) match = date >= new Date(from) && date <= new Date(to);
+                            return match && (d.mode.toLowerCase().includes(search) || (d.details && d.details.toLowerCase().includes(search)));
+                        });
+
+                        arr.sort((a,b) => b.timestamp - a.timestamp);
+                        arr.forEach(d => list.innerHTML += this.createCard(d));
+                    }
+                });
+            },
+
+            createCard: function(d) {
+                let clr = d.status === 'approved' ? 'bg-green-100 text-green-700' : (d.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700');
+                const files = d.attachments ? `<div class="mt-2 flex gap-2 overflow-x-auto">${d.attachments.map((u,i)=>`<button onclick="app.viewImage('${u}')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">Bill ${i+1}</button>`).join('')}</div>` : '';
+                return `
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border dark:border-gray-700 mb-3 animate-slide-up">
+                        <div class="flex justify-between"><h4 class="font-bold">${d.mode}</h4><span class="font-bold text-lg">₹${d.approvedAmount || d.amount}</span></div>
+                        <p class="text-xs opacity-60 mt-1">${d.details||''}</p>
+                        ${files}
+                        <div class="mt-2 flex justify-between items-center">
+                            <span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${clr}">${d.status}</span>
+                            <span class="text-xs opacity-50">${d.date}</span>
+                        </div>
+                    </div>`;
+            },
+
+            viewImage: function(url) {
+                Swal.fire({ imageUrl: url, imageAlt: 'Receipt', showConfirmButton: false, showCloseButton: true, width: '90%' });
+            },
+
+            handleFilterChange: function() {
+                const f = document.getElementById('historyFilter').value;
+                const c = document.getElementById('customDateSection');
+                if(f === 'custom') c.classList.remove('hidden'); else c.classList.add('hidden');
+                this.loadHistoryList();
+            },
+
+            // MANAGER
+            checkManagerNotifications: function() {
+                db.ref('expenses').on('value', (snap) => {
+                    let c = 0; 
+                    if(snap.exists()) snap.forEach(i => { if(i.val().managerId === this.currentUser.key && i.val().status === 'pending_manager') c++; });
+                    const b = document.getElementById('mgrBadge');
+                    if(c > 0) { b.classList.remove('hidden'); b.innerText = c; } else b.classList.add('hidden');
+                });
+            },
+
+            loadManagerApprovals: function() {
+                db.ref('expenses').on('value', (snap) => {
+                   const list = document.getElementById('approvalList'); list.innerHTML = '';
+                   if(snap.exists()) {
+                       snap.forEach(c => {
+                           const d = {key:c.key, ...c.val()};
+                           if(d.managerId === this.currentUser.key && d.status === 'pending_manager') {
+                               list.innerHTML += `
+                                   <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md border-l-4 border-blue-600 mb-3 animate-slide-up">
+                                       <div class="flex justify-between"><h4 class="font-bold">${d.userName}</h4><span class="font-bold">₹${d.amount}</span></div>
+                                       <p class="text-xs opacity-70 mb-2">${d.mode}</p>
+                                       ${d.attachments ? `<div class="flex gap-2 mb-2 overflow-x-auto">${d.attachments.map((u,i)=>`<button onclick="app.viewImage('${u}')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">View</button>`).join('')}</div>` : ''}
+                                       <div class="flex gap-2 mt-2">
+                                           <button onclick="app.mgrAction('${d.key}','approve')" class="flex-1 bg-green-600 text-white text-xs py-2 rounded-xl font-bold">Approve</button>
+                                           <button onclick="app.mgrAction('${d.key}','reject')" class="flex-1 bg-red-500 text-white text-xs py-2 rounded-xl font-bold">Reject</button>
+                                       </div>
+                                   </div>`;
+                           }
+                       });
+                   }
+                });
+            },
+
+            mgrAction: async function(key, action) {
+                if(action === 'reject') {
+                    const {value: r} = await Swal.fire({input:'text', title:'Reason'});
+                    if(r) db.ref(`expenses/${key}`).update({status:'rejected', rejectReason: r});
+                } else { db.ref(`expenses/${key}`).update({status:'pending_admin', approvedBy:'Manager'}); }
+            },
+
+            showScreen: function(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(id).classList.add('active');
+                document.querySelectorAll('.nav-icon').forEach(n => { n.classList.remove('text-blue-600'); n.classList.add('text-gray-400'); });
+                
+                if(id === 'homeScreen') document.querySelector('#navHome i').classList.replace('text-gray-400', 'text-blue-600');
+                if(id === 'approvalScreen') { document.querySelector('#navApproval i').classList.replace('text-gray-400', 'text-blue-600'); this.loadManagerApprovals(); }
+                if(id === 'historyScreen') { document.querySelector('#navHistory i').classList.replace('text-gray-400', 'text-blue-600'); this.loadHistoryList(); }
+                if(id === 'profileScreen') document.querySelector('#navProfile i').classList.replace('text-gray-400', 'text-blue-600');
+            }
         };
 
+        // EXPOSE TO GLOBAL
+        window.app = app;
+        document.addEventListener('DOMContentLoaded', () => app.init());
     </script>
 </body>
 </html>
